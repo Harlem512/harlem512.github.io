@@ -6,7 +6,7 @@ const input = {
 }
 
 // "routing"
-const pages = ['home', 'rm-map']
+const pages = ['home', 'rm-map', '404']
 for (const page of pages) {
   input[page] = resolve(__dirname, `./vite/${page}.html`)
 }
