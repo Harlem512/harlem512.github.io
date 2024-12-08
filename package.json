@@ -1,0 +1,18 @@
+{
+  "name": "harlem512.github.io",
+  "description": "Harlem512's super cool website",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "npm run build && vite preview"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "typescript": "^5.1.6",
+    "vite": "^4.4.12"
+  },
+  "dependencies": {
+    "@types/leaflet": "^1.9.3",
+    "leaflet": "^1.9.4"
+  }
+}
