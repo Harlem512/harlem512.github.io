@@ -1,0 +1,16 @@
+[
+  {
+    "title": "Rusted Moss Interactive Map",
+    "links": [
+      {
+        "page": "/rm-map.html",
+        "image": "https://raw.githubusercontent.com/Harlem512/rm-map/refs/heads/main/tiles/1/0/0.png",
+        "imageAlt": "(map preview)"
+      },
+      {
+        "page": "https://github.com/Harlem512/rm-map",
+        "text": "Tiles Source"
+      }
+    ]
+  }
+]

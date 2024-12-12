@@ -1,0 +1,9 @@
+---
+import UnstyledMetadata from '@/layouts/UnstyledMetadata.astro'
+import '@/style/mvp.css'
+import { type Props } from '@/layouts/UnstyledMetadata.astro'
+---
+
+<UnstyledMetadata {...Astro.props}>
+  <slot />
+</UnstyledMetadata>

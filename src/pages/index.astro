@@ -1,0 +1,20 @@
+---
+import Metadata from '@/layouts/Metadata.astro'
+import projects from '@/data/projects.json'
+import ProjectCard from '@/components/ProjectCard'
+---
+
+<Metadata
+  title='Harlem512'
+  description='A Harlem512 production, containing cool Rusted Moss stuff'
+>
+  <header>
+    <h1>Harlem512 (the RM modder)</h1>
+    <a href='https://github.com/Harlem512/harlem512.github.io'>Repository</a>
+  </header>
+  <main>
+    <section>
+      {projects.map((data) => <ProjectCard {...data} />)}
+    </section>
+  </main>
+</Metadata>

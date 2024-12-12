@@ -1,0 +1,122 @@
+---
+// This file is called `rm-map.html/index.astro` to support my old link
+import UnstyledMetadata from '@/layouts/UnstyledMetadata.astro'
+import 'leaflet/dist/leaflet.css'
+import rmMapMeta from '@/data/rm-map-meta.json'
+
+// room borders
+const BORDERS = JSON.stringify(
+  rmMapMeta.map(
+    ({ x1, y1, x2, y2, color, room_name, room_id, map_x, map_y }) => [
+      x1 / 256,
+      y1 / 256,
+      x2 / 256,
+      y2 / 256,
+      color,
+      `${room_name} (${room_id})<br>[${map_x},${map_y}]`,
+    ]
+  )
+)
+---
+
+<style is:global>
+  html,
+  body {
+    height: 100%;
+    padding: 0;
+    margin: 0;
+  }
+
+  #map {
+    z-index: 0;
+    height: 100%;
+  }
+
+  .leaflet-tile-loaded {
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+  }
+
+  .leaflet-popup-content {
+    text-align: center;
+  }
+</style>
+
+<UnstyledMetadata
+  title='Rusted Moss Interactive Map'
+  description='An interactive map for Rusted Moss'
+  image='https://raw.githubusercontent.com/Harlem512/rm-map/refs/heads/main/tiles/1/0/0.png'
+>
+  <div id='map' data-borders={BORDERS}></div>
+  <script>
+    import L from 'leaflet'
+
+    const TILE_SIZE = 256
+    // leaflet width/height maximums, based on the zoom 0 tile (height is negative)
+    const WIDTH = 45_840 / TILE_SIZE
+    const HEIGHT = -27_600 / TILE_SIZE
+
+    // build map
+    const map = L.map('map', {
+      center: [HEIGHT / 2, WIDTH / 2],
+      zoom: 3,
+      zoomControl: true,
+      maxBoundsViscosity: 1,
+      crs: L.CRS.Simple,
+    })
+
+    // data source
+    L.tileLayer(
+      'https://raw.githubusercontent.com/Harlem512/rm-map/refs/heads/main/tiles/{z}/{x}/{y}.png',
+      {
+        attribution:
+          "<a href='https://www.rustedmossgame.com/' target='_blank'>Rusted Moss</a> interactive map, a <a href='/' target='_blank'>Harlem512 Production</a>",
+        noWrap: true,
+        minZoom: 0,
+        maxNativeZoom: Math.ceil(
+          Math.log(Math.max(WIDTH, HEIGHT)) / Math.log(2)
+        ),
+        bounds: [
+          [0, WIDTH],
+          [HEIGHT, 0],
+        ],
+      }
+    ).addTo(map)
+
+    const BORDERS: [number, number, number, number, string, string][] =
+      JSON.parse(document.getElementById('map')?.dataset.borders ?? '[]')
+
+    // popup
+    const popup = L.popup()
+
+    // room borders
+    const roomBorders = L.layerGroup()
+    for (const [x1, y1, x2, y2, color, pop] of BORDERS) {
+      L.rectangle(
+        [
+          [-y1, x1],
+          [-y2, x2],
+        ],
+        {
+          color,
+          weight: 1,
+        }
+      )
+        .addTo(roomBorders)
+        .bindPopup(popup)
+        .addEventListener('click', () => popup.setContent(pop))
+    }
+    map.addLayer(roomBorders)
+
+    // add controls
+    L.control
+      .layers(
+        {},
+        {
+          Rooms: roomBorders,
+        }
+      )
+      .addTo(map)
+  </script>
+</UnstyledMetadata>
