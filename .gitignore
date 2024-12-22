@@ -25,3 +25,6 @@ pnpm-debug.log*
 
 # vscode folder
 .vscode
+
+# tiles
+public/tiles

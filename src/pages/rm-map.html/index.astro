@@ -1,22 +1,257 @@
 ---
 // This file is called `rm-map.html/index.astro` to support my old link
+import customMarkers from '@/data/rm_data/custom_markers.json'
+import rawMapColors from '@/data/rm_data/global.map_colors_.json'
+import mapClimb from '@/data/rm_data/map_climb.json'
+import mapLibrary from '@/data/rm_data/map_library.json'
+import mapMain from '@/data/rm_data/map_main.json'
+import roomData from '@/data/rm_data/room_data.json'
+import type {
+  AllData,
+  BBox,
+  CustomData,
+  Point,
+  UrlMarker,
+} from '@/data/rm_data/types'
 import UnstyledMetadata from '@/layouts/UnstyledMetadata.astro'
 import 'leaflet/dist/leaflet.css'
-import rmMapMeta from '@/data/rm-map-meta.json'
 
-// room borders
-const BORDERS = JSON.stringify(
-  rmMapMeta.map(
-    ({ x1, y1, x2, y2, color, room_name, room_id, map_x, map_y }) => [
-      x1 / 256,
-      y1 / 256,
-      x2 / 256,
-      y2 / 256,
-      color,
-      `${room_name} (${room_id})<br>[${map_x},${map_y}]`,
-    ]
-  )
-)
+type RoomDataType = typeof roomData
+type Room = keyof RoomDataType
+
+type MapData = {
+  [room in Room]?: {
+    x: number
+    y: number
+    w: number
+    h: number
+  }
+}
+
+/** Normalized map data, with negative Y */
+type NormalizedMapData = {
+  [room in Room]?: {
+    leafletX: number
+    leafletY: number
+    leafletWidth: number
+    leafletHeight: number
+  }
+}
+
+type InputBBox = {
+  left: number
+  top: number
+  right: number
+  bottom: number
+}
+
+type InputPoint = {
+  x: number
+  y: number
+}
+
+/** X/Y coordinates are in global space, with negative y */
+const normalizedMap: NormalizedMapData = {}
+function normalizeData(data: MapData, xOffset: number, yOffset: number) {
+  let minX = Infinity
+  let minY = Infinity
+
+  for (const { x, y } of Object.values(data)) {
+    minX = Math.min(x, minX)
+    minY = Math.min(y, minY)
+  }
+
+  Object.entries(data).forEach(([key, { x, y, w, h }]) => {
+    normalizedMap[key as Room] = {
+      leafletX: x - minX + xOffset,
+      leafletY: -(y - minY + yOffset),
+      leafletWidth: w,
+      leafletHeight: h,
+    }
+  })
+}
+
+normalizeData(mapMain, 0, 16_528)
+normalizeData(mapLibrary, 45_328, 26_992)
+normalizeData(mapClimb, 55_226, 0)
+
+const allData: AllData = {
+  rooms: [],
+  transition: [],
+  arena: [],
+  pit: [],
+  lore: [],
+  hp: [],
+  mp: [],
+  flag: [],
+  dmg: [],
+  backpack: [],
+  chest: [],
+  trinket: [],
+  other: [],
+  save: [],
+  warp: [],
+  upgrade: [],
+  boss: [],
+  // convert from gamemaker RGB to hex code
+  colors: rawMapColors.map((raw) => '#' + raw.toString(16).padStart(6, '0')),
+}
+
+for (const [
+  key,
+  {
+    id,
+    room_width,
+    room_height,
+    biome_id,
+    biome_name,
+    map_x,
+    map_y,
+    color_id,
+    ...data
+  },
+] of Object.entries(roomData)) {
+  const roomName: Room = key as Room
+  const mapPosition = normalizedMap[roomName]
+
+  if (!mapPosition) {
+    continue
+  }
+
+  const { leafletX, leafletY, leafletWidth, leafletHeight } = mapPosition
+
+  allData.rooms.push([
+    leafletX / 256,
+    leafletY / 256,
+    leafletWidth / 256,
+    leafletHeight / 256,
+    (leafletWidth - room_width) / 256,
+    (leafletHeight - room_height) / 256,
+    color_id,
+    `${roomName} (${id})<br>[${map_x},${map_y}]`,
+  ])
+
+  const bbox = ({ right, bottom, left, top }: InputBBox): BBox => [
+    (leafletX + left) / 256,
+    (leafletY - top) / 256,
+    (right - left) / 256,
+    (bottom - top) / 256,
+  ]
+
+  const point = ({ x, y }: InputPoint): Point => [
+    (leafletY - y) / 256,
+    (leafletX + x) / 256,
+  ]
+
+  if ('transition' in data)
+    allData.transition.push(...data.transition.map(bbox))
+  if ('arena' in data) allData.arena.push(...data.arena.map(bbox))
+  if ('pit' in data) allData.pit.push(...data.pit.map(bbox))
+
+  if ('lore' in data) allData.lore.push(...data.lore.map(point))
+  if ('chest' in data) allData.chest.push(...data.chest.map(point))
+  if ('save' in data) allData.save.push(...data.save.map(point))
+  if ('warp' in data) allData.warp.push(...data.warp.map(point))
+
+  if ('pickup' in data) {
+    for (const { type, ...coord } of data.pickup) {
+      const p = point(coord)
+      switch (type) {
+        case 'opickup_tp':
+          allData.backpack.push(p)
+          break
+        case 'opickup_mp':
+          allData.mp.push(p)
+          break
+        case 'opickup_hp':
+          allData.hp.push(p)
+          break
+        case 'opickup_flag':
+          allData.flag.push(p)
+          break
+        case 'opickup_trinket':
+          if (coord.index == null) {
+            throw new Error(`Missing index for ${coord} ${type}`)
+          }
+          allData.trinket[coord.index] = [p[0], p[1]]
+          break
+        case 'opickup_dmg':
+          allData.dmg.push(p)
+          break
+        default:
+          throw new Error(`Missing type: ${type} ${JSON.stringify(data)}`)
+      }
+    }
+  }
+
+  if ('other' in data) {
+    for (let { type, ...rest } of data.other) {
+      let array = allData.other
+      const { x, y } = rest
+      if ('index' in rest) {
+        let trinkets: [number, number, number]
+        // shops
+        switch (rest.index) {
+          case 705:
+            type = 'shop_fae'
+            trinkets = [5, 10, 24]
+            break
+          case 441:
+            type = 'shop_test'
+            trinkets = [2, 3, 9]
+            break
+          case 706:
+            type = 'shop_lake'
+            trinkets = [31, 15, 22]
+            break
+          default:
+            throw new Error(JSON.stringify(rest))
+        }
+        allData.trinket[trinkets[0]] = point({ x: x - 32, y: y - 32 })
+        allData.trinket[trinkets[1]] = point({ x, y: y - 56 })
+        allData.trinket[trinkets[2]] = point({ x: x + 32, y: y - 32 })
+      }
+
+      array.push([...point(rest), type])
+    }
+  }
+
+  // upgrades
+  if ('upgrade' in data) {
+    allData.upgrade.push(
+      ...data.upgrade.map<UrlMarker>(({ type, ...coord }) => [
+        ...point(coord),
+        type,
+      ])
+    )
+  }
+  // guns
+  if ('gun' in data) {
+    allData.upgrade.push(
+      ...data.gun.map<UrlMarker>(({ index, ...coord }) => [
+        ...point(coord),
+        `gun${index + 1}`,
+      ])
+    )
+  }
+
+  // custom
+  if (roomName in customMarkers) {
+    const { layer, ...customData } = customMarkers[
+      roomName as keyof typeof customMarkers
+    ] as CustomData
+    const p = point(customData)
+    switch (layer) {
+      case 'other':
+        allData.other.push([...p, customData.img])
+        break
+      case 'boss':
+        allData.boss.push([...p, customData.img])
+    }
+  }
+}
+
+const ALL_DATA = JSON.stringify(allData)
 ---
 
 <style is:global>
@@ -32,7 +267,8 @@ const BORDERS = JSON.stringify(
     height: 100%;
   }
 
-  .leaflet-tile-loaded {
+  .leaflet-tile-loaded,
+  .leaflet-marker-icon {
     image-rendering: crisp-edges;
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
@@ -48,18 +284,45 @@ const BORDERS = JSON.stringify(
   description='An interactive map for Rusted Moss'
   image='https://raw.githubusercontent.com/Harlem512/rm-map/refs/heads/main/tiles/1/0/0.png'
 >
-  <div id='map' data-borders={BORDERS}></div>
+  <div id='map' data-mapdata={ALL_DATA}></div>
   <script>
     import L from 'leaflet'
+    import type { AllData, BBox, Point, UrlMarker } from '@/data/rm_data/types'
 
-    const TILE_SIZE = 256
+    const {
+      rooms,
+      transition,
+      arena,
+      pit,
+      lore,
+      hp,
+      mp,
+      flag,
+      dmg,
+      backpack,
+      chest,
+      save,
+      warp,
+      other,
+      trinket,
+      upgrade,
+      boss,
+      colors,
+    }: AllData = JSON.parse(
+      document.getElementById('map')?.dataset.mapdata ?? ''
+    )
+
+    const TILE_SIZE = 512
+    // largest {z} zoom
+    const MAX_ZOOM = 8
+    const BASE_SIZE = (1 << MAX_ZOOM) * TILE_SIZE
     // leaflet width/height maximums, based on the zoom 0 tile (height is negative)
-    const WIDTH = 45_840 / TILE_SIZE
-    const HEIGHT = -27_600 / TILE_SIZE
+    const WIDTH = (74_632 / BASE_SIZE) * TILE_SIZE
+    const HEIGHT = (-67_632 / BASE_SIZE) * TILE_SIZE
 
     // build map
     const map = L.map('map', {
-      center: [HEIGHT / 2, WIDTH / 2],
+      center: [HEIGHT / 2.5, WIDTH / 4],
       zoom: 3,
       zoomControl: true,
       maxBoundsViscosity: 1,
@@ -68,15 +331,15 @@ const BORDERS = JSON.stringify(
 
     // data source
     L.tileLayer(
-      'https://raw.githubusercontent.com/Harlem512/rm-map/refs/heads/main/tiles/{z}/{x}/{y}.png',
+      // 'tiles/{z}/{x}/{y}.png',
+      'https://raw.githubusercontent.com/Harlem512/rm-map/9482938a58a25c3f65a3188dc8ba9833a5c6c555/tiles/{z}/{x}/{y}.png',
       {
         attribution:
           "<a href='https://www.rustedmossgame.com/' target='_blank'>Rusted Moss</a> interactive map, a <a href='/' target='_blank'>Harlem512 Production</a>",
         noWrap: true,
         minZoom: 0,
-        maxNativeZoom: Math.ceil(
-          Math.log(Math.max(WIDTH, HEIGHT)) / Math.log(2)
-        ),
+        tileSize: TILE_SIZE,
+        maxNativeZoom: MAX_ZOOM,
         bounds: [
           [0, WIDTH],
           [HEIGHT, 0],
@@ -84,30 +347,117 @@ const BORDERS = JSON.stringify(
       }
     ).addTo(map)
 
-    const BORDERS: [number, number, number, number, string, string][] =
-      JSON.parse(document.getElementById('map')?.dataset.borders ?? '[]')
-
     // popup
     const popup = L.popup()
 
     // room borders
     const roomBorders = L.layerGroup()
-    for (const [x1, y1, x2, y2, color, pop] of BORDERS) {
+    const internalRoomBorders = L.layerGroup()
+    for (const [x, y, leafletW, leafletH, mapW, mapH, color, pop] of rooms) {
       L.rectangle(
         [
-          [-y1, x1],
-          [-y2, x2],
+          [y, x],
+          [y - leafletH, x + leafletW],
         ],
         {
-          color,
+          color: colors[color],
+          fill: true,
+          fillOpacity: 0,
           weight: 1,
         }
       )
         .addTo(roomBorders)
         .bindPopup(popup)
         .addEventListener('click', () => popup.setContent(pop))
+      // debug printer
+      // .addEventListener('click', ({ latlng }) => {
+      //   const dx = -(x - latlng.lng) * 256
+      //   const dy = (y - latlng.lat) * 256
+      //   const name = pop.split(' ')[0]
+      //   popup.setContent(
+      //     `"${name}": {"x":${dx}, "y":${dy}, "layer":"placeholder", "img":"placeholder"}`
+      //   )
+      // })
+
+      L.rectangle(
+        [
+          // add magic offsets
+          [y + 96 / 256, x - 41 / 256],
+          // mapH/W uses delta form
+          [y - leafletH + mapH - 64 / 256, x + leafletW + mapW + 40 / 256],
+        ],
+        {
+          color: colors[color],
+          fill: true,
+          fillOpacity: 0.1,
+          weight: 1,
+        }
+      ).addTo(internalRoomBorders)
     }
+    // adding the layer enables it by default
     map.addLayer(roomBorders)
+
+    // bbox
+    function addBBox(boxes: BBox[], color: string) {
+      const layer = L.layerGroup()
+      for (const [x, y, w, h] of boxes) {
+        L.rectangle(
+          [
+            [y, x],
+            [y - h, x + w],
+          ],
+          {
+            color: color,
+            weight: 1,
+          }
+        ).addTo(layer)
+      }
+      return layer
+    }
+
+    // point
+    function addPoint(points: Point[], img: string) {
+      const layer = L.layerGroup()
+      const icon = L.icon({
+        iconUrl: `/rm-icons/${img}.png`,
+        iconAnchor: [16, 39],
+      })
+      for (const [x, y] of points) {
+        L.marker([x, y], { icon }).addTo(layer)
+      }
+      map.addLayer(layer)
+      return layer
+    }
+
+    // index marker
+    function addIndexMarker(points: Point[], prefix?: string) {
+      const layer = L.layerGroup()
+      points.forEach(([x, y], i) =>
+        L.marker([x, y], {
+          icon: L.icon({
+            iconUrl: `/rm-icons/${prefix}${i}.png`,
+            iconAnchor: [16, 39],
+          }),
+        }).addTo(layer)
+      )
+      map.addLayer(layer)
+      return layer
+    }
+
+    // adds icons based on url
+    function addUrlMarker(points: UrlMarker[]) {
+      const layer = L.layerGroup()
+      for (const [x, y, u] of points) {
+        L.marker([x, y], {
+          icon: L.icon({
+            iconUrl: `/rm-icons/${u}.png`,
+            iconAnchor: [16, 39],
+          }),
+        }).addTo(layer)
+      }
+      map.addLayer(layer)
+      return layer
+    }
 
     // add controls
     L.control
@@ -115,6 +465,23 @@ const BORDERS = JSON.stringify(
         {},
         {
           Rooms: roomBorders,
+          'Save Points': addPoint(save, 'save'),
+          Teleporter: addPoint(warp, 'teleport'),
+          Bosses: addUrlMarker(boss),
+          'Capacity Upgrade': addPoint(backpack, 'backpack'),
+          Chests: addPoint(chest, 'chest'),
+          'Fae Silver': addPoint(dmg, 'dmg'),
+          Flag: addPoint(flag, 'flag'),
+          HP: addPoint(hp, 'hp'),
+          Lore: addPoint(lore, 'lore'),
+          MP: addPoint(mp, 'mp'),
+          Trinket: addIndexMarker(trinket, 'trinkets'),
+          'Special Locations': addUrlMarker(other),
+          Upgrades: addUrlMarker(upgrade),
+          'Room Transitions': addBBox(transition, '#19CF4D'),
+          Arenas: addBBox(arena, '#D0B507'),
+          'Death Pits': addBBox(pit, '#A5290C'),
+          'Room Bounding Box': internalRoomBorders,
         }
       )
       .addTo(map)

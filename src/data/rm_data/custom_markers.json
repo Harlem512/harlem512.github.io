@@ -1,0 +1,94 @@
+{
+  "rm_sea_top_2": {
+    "x": 206.5,
+    "y": 160.5,
+    "layer": "other",
+    "img": "challenge_seer"
+  },
+  "rm_hell_garden": {
+    "x": 223,
+    "y": 181,
+    "layer": "other",
+    "img": "challenge_juni"
+  },
+  "rm_mount_ameli_0": {
+    "x": 215,
+    "y": 160,
+    "layer": "other",
+    "img": "challenge_ameli"
+  },
+  "rm_lab_bed_1": {
+    "x": 241,
+    "y": 170,
+    "layer": "other",
+    "img": "challenge_sleep"
+  },
+  "rm_forest_cafe_1": {
+    "x": 237,
+    "y": 151,
+    "layer": "other",
+    "img": "challenge_test"
+  },
+  "rext_i00": {
+    "x": 474,
+    "y": 153,
+    "layer": "other",
+    "img": "challenge_juni"
+  },
+  "rm_mount_top_left_boss": {
+    "x": 224,
+    "y": 123,
+    "layer": "boss",
+    "img": "boss_war"
+  },
+  "rm_mount_boss": {
+    "x": 292,
+    "y": 122,
+    "layer": "boss",
+    "img": "boss_elicia"
+  },
+  "rm_moss_top_boss": {
+    "x": 374,
+    "y": 122,
+    "layer": "boss",
+    "img": "boss_maya"
+  },
+  "rm_test_boss": { "x": 294, "y": 100, "layer": "boss", "img": "boss_ameli" },
+  "rm_sea_boss": { "x": 426, "y": 426, "layer": "boss", "img": "boss_freia" },
+  "rm_lake_boss": { "x": 434, "y": 230, "layer": "boss", "img": "boss_void" },
+  "rm_lab_boss": {
+    "x": 368,
+    "y": 250,
+    "layer": "boss",
+    "img": "boss_spirella"
+  },
+  "rm_catacombs_boss": {
+    "x": 642,
+    "y": 400,
+    "layer": "boss",
+    "img": "boss_lenore"
+  },
+  "rm_boss_test": { "x": 226, "y": 110, "layer": "boss", "img": "boss_death" },
+  "rm_forest_boss": { "x": 318, "y": 188, "layer": "boss", "img": "boss_maya" },
+  "rm_underhang_boss": {
+    "x": 286,
+    "y": 176,
+    "layer": "boss",
+    "img": "boss_famine"
+  },
+  "rm_sea_top_boss": {
+    "x": 256,
+    "y": 108,
+    "layer": "boss",
+    "img": "boss_pestilence"
+  },
+  "rfae_boss": { "x": 308, "y": 176, "layer": "boss", "img": "boss_seer" },
+  "rlib_boss": { "x": 396, "y": 148, "layer": "boss", "img": "boss_twins" },
+  "rm_catacombs_right_boss": {
+    "x": 394,
+    "y": 106,
+    "layer": "boss",
+    "img": "boss_face"
+  },
+  "rext_j04": { "x": 338, "y": 186, "layer": "boss", "img": "boss_froy" }
+}
