@@ -8,6 +8,10 @@ Fun website, by that one [Rusted Moss](https://www.rustedmossgame.com/) modder. 
 
 An interactive map for Rusted Moss. Build with LeafletJS, a [fork](https://github.com/commenthol/gdal2tiles-leaflet) of `gdal2tiles.py`, some python scripts, and a RM mod. [Tiles are hosted here](https://github.com/Harlem512/rm-map).
 
+# RM Modding Documentation
+
+[Detailed information](https://harlem512.github.io/rm-docs) about how to mod Rusted Moss. Contains everything from Game Object and Event names to code deconstructions and reference mods.
+
 ## To Build
 
 You'll need [Node.JS](https://nodejs.org/en). Then run `npm run build`, which creates the `dist` folder. Alternatively, used `npm run dev` or `npm run preview` to locally host a development or production version of the site, respectively.
