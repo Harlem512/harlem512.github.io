@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'modDocs/*/*.mdx'
+      - 'modDocs/src/*/*.mdx'
 
 jobs:
   comment_on_commit:
