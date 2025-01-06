@@ -1,0 +1,21 @@
+name: Add Docs Messages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'modDocs/*/*.mdx'
+
+jobs:
+  comment_on_commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: 1
+          body: |
+            ${{ github.event.head_commit.id }}: ${{ github.event.head_commit.message }}
+            By ${{ github.event.head_commit.author }} on ${{ github.event.head_commit.timestamp }}
