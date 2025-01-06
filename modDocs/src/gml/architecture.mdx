@@ -68,3 +68,17 @@ We have a lot of tools to manipulate Rooms through modding, from `room_add(...)`
 # Sprites
 
 Sprites are images, and are used to render most things to the screen. Anything that isn't extremely fluidly animated is probably a Sprite. GameMaker gives us a lot of control for manipulated Sprites, however there are [performance issues](/rm-docs/modding/limitations#sprites) if you load too many new sprites.
+
+# Folders
+
+There are three main folders for modding.
+
+| Path                                 | Name         | R/W          | Used For                          |
+| ------------------------------------ | ------------ | ------------ | --------------------------------- |
+| `SteamLibrary\steamapps\common\Mose` | Steam Folder | Read-only    | RM Files, mods                    |
+| `%LocalAppData%\Rusted_Moss`         | Save Folder  | Read/Write   | Changeable files, persistent data |
+| `%LocalAppData%\Temp`                | Temp Folder  | Read/Write\* | Temporary files                   |
+
+When reading a file, the game first checks the Save folder for a matching file, then it checks the Steam folder. The Steam folder forbids writing, so any if you write to file, it always writes to the Save folder.
+
+Reading from or writing to the Temp folder requires prefixing the path with `temp_directory_get()`. Files in the Temp directory can be freely deleted at any time, so you should only use it for temporary files.

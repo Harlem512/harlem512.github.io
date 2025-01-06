@@ -23,7 +23,7 @@
   --border-radius-block: 1em;
 
   --max-width: 1080px;
-
+  --footer-height: 80px;
   --nav-width: 250px;
 }
 
@@ -106,6 +106,10 @@ section > aside:hover {
 }
 
 /* MARK: Sticky footer */
+body:has(footer) {
+  margin-bottom: var(--footer-height);
+}
+
 footer {
   display: flex;
   position: fixed;
@@ -257,6 +261,12 @@ nav {
   background: var(--color-nav-bg);
   overflow-y: hidden;
   scrollbar-gutter: stable;
+}
+
+@media (hover: none) {
+  nav {
+    overflow-y: scroll;
+  }
 }
 
 nav:hover {
