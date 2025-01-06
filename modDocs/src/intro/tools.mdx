@@ -1,0 +1,33 @@
+---
+title: 'Tools and Resources'
+desc: 'A (short) list of other useful tools and resources for modding.'
+order: 3
+---
+
+# Code Editor
+
+Code editors let you write code more efficiently than a normal text editor. While you *can* use Windows notepad, you really want something with line numbers and integrated access to the file system. The specific code editor you use doesn't really matter, but my recommendation is [Visual Studio Code](https://code.visualstudio.com/).
+
+# Undertale Mod Tool
+
+[Undertale Mod Tool](https://github.com/UnderminersTeam/UndertaleModTool) (UTMT or UMT) is a tool for inspecting the source code of Rusted Moss (and other GameMaker games). While you can use Undertale Mod Tool to make mods, we don't need to (and there are [boring technical reasons](/rm-docs/modding/limitations#decompilation) why we can't). I recommend reading [my docs](/rm-docs/intro/utmt) for more information.
+
+# GameMaker Long Term Service
+
+Rusted Moss runs on an older version of GameMaker (2022.9.X), which is very similar to the current long term service version. Instead of accessing the normal monthly version of the manual, you'll want to use the [LTS manual](https://manual.gamemaker.io/lts/en). It's not significantly different, but there are functions that aren't available.
+
+I highly recommend installing GameMaker as a way to verify behavior. Because of [boring technical reasons](/rm-docs/modding/limitations#lts-bugs), it can be useful to sanity-check GameMaker functionality in a more isolated environment.
+
+# Catspeak Documentation
+
+[Catspeak](https://www.katsaii.com/catspeak-lang/) is slightly different than GML, so I recommend skimming over the language documentation at least once. Also, Catspeak has a [handy list](https://github.com/katsaii/catspeak-lang/blob/main/src-lts/scripts/__scr_catspeak_gml_interface/__scr_catspeak_gml_interface.gml) of every GameMaker function we have access to. This is especially useful since some variables, like `room`, are function calls (`room_get()`) in Catspeak.
+
+I highly recommend installing Catspeak in an empty GameMaker project if you're running into weird behavior. There are a lot of abstraction layers between the mod code we write and the engine; having an environment that removes a few of those layers is valuable.
+
+# Official Discord
+
+The [official Discord](https://www.rustedmossgame.com) is probably the only English-speaking place on the internet where you can find other Rusted Moss modders. If you want to download mods, either for playing with or modding examples, this is the place. Mods are in the `# mod-share` channel.
+
+# Rusted Moss Mod Loader
+
+[Rusted Moss Mod Loader (RMML)](/rm-docs/intro/rmml) is a tool built by me. It solves a few [technical issues](/rm-docs/intro/rmml#why) with modding and generally makes everything easier. You can also use RMML as a working example of how to bypass the normal mod loading system.

@@ -1,0 +1,52 @@
+---
+title: 'Installing Mods'
+desc: 'How to install and play with mods, and how to protect your saves'
+order: 1
+---
+
+# The Discord
+
+All mods are stored in the [official Discord](https://www.rustedmossgame.com) in the `# mod-share` channel. Many mods reference RMML or Rusted Moss Mod Loader, which is also available in the `# mod-share` channel.
+
+Rusted Moss Mod Loader is required to use `.md` mods and is optional for `.ini` mods.
+
+# Steam Directory
+
+Mods live in Rusted Moss's Steam directory, `Steam/steamapps/common/Mose`. You can easily find this by right-clicking on the game and clicking "Browse local files".
+
+![Browse Local Files](/docs/browseLocalFiles.png)
+
+From here, you'll find the `mods` folder. Some mod installation guides call this folder `Mose/mods`.
+
+From there, you follow the mod's install instructions. For non-RMML mods this usually means unzipping the install zip into the `mods` folder, making sure `meta_info.ini` is replaced.
+
+If an install zip isn't provided, then you need to open the `meta_info.ini` file in the `mods` folder and set `mod_enabled` to `1` and replace `sniper_bnuy.ini` with the file name of the mod.
+
+```mini
+[general]
+mod_enabled = 1
+[meta_info]
+mod_0 = my_mod.ini
+```
+
+# Rusted Moss Mod Loader
+
+[Rusted Moss Mod Loader](/rm-docs/modding/rmml) replaces the normal mod installation and loading process to fix [a few issues](/rm-docs/modding/rmml#why). RMML mods end with `.md`.
+
+Rusted Moss Mod Loader is installed like any other `.ini` mod, simply unzip `rmml_X_X.zip` into the `mods` folder, replacing `meta_info.ini`. After installing, mods are placed in the `mods/rmml` folder. To load a mod, open `modlist.txt` with a text editor and add the file name of the mod.
+
+```
+# put your mods here (or disable them with #)
+# mods are loaded (and run) in the order written here
+rmml_modlister.md
+ccw_shark.md
+cc_shark.md
+
+my_mod_here.md
+my_other_mod.ini
+your_mod_folder/mod_name.md
+```
+
+A few pitfalls you might run into:
+
+- Make sure you put the mod in the `mods/rmml` folder. The filenames are interpreted as file paths to a `.md` file, starting with the `rmml` folder. If you add `my_mod.md` to the modlist and put it in the `mods` folder (not `mods/rmml`), Rusted Moss Mod Loader can't find the mod.

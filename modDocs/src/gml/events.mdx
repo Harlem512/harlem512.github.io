@@ -1,0 +1,180 @@
+---
+title: 'Moddable Events'
+desc: 'The 21 moddable event and when they run.'
+order: 2
+---
+
+# Moddable Events
+
+Rusted Moss allows us to write Event code for 21 Events. We get almost everything we'd need, but there are [some exceptions](/rm-docs/modding/limitations#missing-events), notably higher-index Alarm and User Events. If you want more information about each Event, you can check out the [official documentation](https://manual.gamemaker.io/lts/en/The_Asset_Editors/Object_Properties/Object_Events.htm). If you want technical details on how modded Events operate, [here you go](/rm-docs/mose/mods).
+
+First are the twelve Events that run each frame, in the following order. The `Modding Name` is used in mod files (`{MODDING_NAME} = ...` or `## {MODDING_NAME}`).
+
+| Modding Name     | Role                                                                                                  |
+| ---------------- | ----------------------------------------------------------------------------------------------------- |
+| `step_begin`     | Runs before [Alarm Events](#alarm-events).                                                            |
+| `step`           |                                                                                                       |
+| `step_end`       |                                                                                                       |
+| `draw_begin`     | First Event that allows drawing to the screen.                                                        |
+| `draw`           |                                                                                                       |
+| `draw_end`       |                                                                                                       |
+| `draw_gui_start` | First Event that uses screen coordinates instead of world coordinates.                                |
+| `draw_gui`       |                                                                                                       |
+| `draw_gui_end`   | Only Event that doesn't have the [biome shader](/rm-docs/mose/misc#shader). Perfect for GUI elements. |
+
+Next are 12 special Events, that only run under certain conditions.
+
+| Modding Name                    | Description                                                                                                 |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `alarm_0`, `alarm_1`, `alarm_2` | Three [Alarm events](#alarm-events) for indexes `0`, `1`, and `2`.                                          |
+| `animation_end`                 | Runs when an Instance's Sprite animation ends.                                                              |
+| `cleanup`                       | Runs immediately after an Instance is removed from a Room (for any reason), after the `destroy` Event runs. |
+| `create`                        | Runs immediately for an Instance when an Instance is created.                                               |
+| `destroy`                       | Runs when an Instance is destroyed, typically through `instance_destroy(...)`                               |
+
+These Events are also available, however have an `other_` midfix for [`global.mod_map`](/rm-docs/mose/mods#globalmod_map).
+
+| Modding Name                 | Description                                                                                                     |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `room_start`                 | Runs when a Room is first entered. It happens after the `create` Event for Instances that are part of the Room. |
+| `room_end`                   | Runs when a Room is left, such as with `room_goto`. The current Event finishes, and then this Event is called.  |
+| `user_0`, `user_1`, `user_2` | Three [User Events](#alarm-events) for indexes `0`, `1`, and `2`.                                               |
+
+# Alarm Events
+
+Alarm Events run after a specified number of frames, set using `alarm_set({INDEX}, {DELAY})`. You can use `alarm_get({INDEX})` to read an Alarm's current delay. There are twelve Alarm Events, however we only get to mod three of them. The rest can be detected using clever logic in the `step_begin` Event.
+
+````rmml {5}
+## step_begin
+```
+with oplayer {
+  -- alarm is zero when it should run
+  if alarm_get(9) == 0 {
+    show_message("Hello World")
+  }
+}
+```
+````
+
+Since Alarms don't decrement if there isn't any Event code, we can't use arbitrary Alarms, but we can emulate them using code.
+
+````rmml {3,9}
+## create
+```
+self.my_alarm = 5
+```
+
+## step_begin
+```
+self.my_alarm -= 1
+if self.my_alarm == 0 {
+  show_message("Hello World")
+}
+```
+````
+
+# User Events
+
+User Events must be called manually and run immediately.
+
+```sp
+with otile_switcher {
+  event_perform(ev_other, ev_user_11)
+}
+```
+
+In normal GameMaker, they're useful for running code that can be easily modified by a Game Object's children. Similar to Alarms, there are more User Events (16) than we have moddable access to (3). I am not aware of any way to get around this, which is a [limitation](/rm-docs/modding/limitations#missing-events).
+
+# Execution Order
+
+For games, a lot of logic depends on earlier code within the same frame; simulation code typically needs to happen before rendering, so the graphics aren't a frame behind Player inputs. Usually you want even more granularity; a bullet killing an enemy in a frame should destroy that enemy before it has a chance to attack in a later part of the frame.
+
+For most use cases, the nine per-frame Events are good enough for ensuring the right code runs before or after other code. If you think you need more than 9, you probably want to rethink how your code is structured. However, modding doesn't have this luxury.
+
+A lot of the time, you need code to run immediately before or immediately after some Instance's Event to [modify behavior](/rm-docs/modding/existing). Maybe you want to intercept draw calls using `surface_set_target`, or abuse `object_index`, or you need to re-create an Instance that was destroyed before the game crashes. For all of these cases, we must learn about the order GameMaker chooses Instances to run Events for.
+
+## Depth
+
+There are two factors main that GameMaker uses: an Instance's `depth` and when it was created. `depth` is a GameMaker-managed Instance variable used to manipulate draw order, and is just a number.
+
+Before we continue, let's play a game. Think about each Event, and try to guess how those two would affect each Event.
+
+## Order Table
+
+Let's start with four example objects, created in the following order and with varying depths:
+
+```sp
+let person = fun(depth, name) {
+  instance_create_depth(0,0, depth, omod_instance).name = name
+}
+
+person( 0, "Alice")
+person(10, "Bobby")
+person(10, "Carol")
+person( 0, "David")
+```
+
+We can combine this with a simple piece of code we can copy into each Event.
+
+```sp
+show_message(self.name)
+```
+
+Here's the results. How'd you do? From what I understand, this execution order is extremely consistent to the point of total reliability. [Here](/rm-docs/modding/existing#depth-manipulation) is more information about how to abuse this behavior.
+
+| Event                       | Order (left first)         | Formal                       |
+| --------------------------- | -------------------------- | ---------------------------- |
+| `room_start` and `room_end` | Alice, David, Bobby, Carol | Lowest depth, then oldest    |
+| All `step` Events           | Alice, Bobby, Carol, David | Oldest to youngest           |
+| All `draw` Events           | Carol, Bobby, David, Alice | Highest depth, then youngest |
+| `with` statement            | David, Carol, Bobby, Alice | Youngest to oldest           |
+
+## Persistent Objects
+
+The ordering gets weird with `persistent` Instances.
+
+For `with` statements, all Instances created in the current Room run (in youngest to oldest order), then all `persistent` Instances run in the `draw` Event order (highest depth, then youngest).
+
+````rmml
+# controller
+
+## room_start
+```
+let person = fun(depth, name) {
+  let inst = instance_create_depth(0,0, depth, omod_instance)
+  inst.name = name
+  return inst
+}
+
+if !global.inited {
+  global.inited = true
+  person( 0, "Alice").persistent = true
+  person(10, "Bobby").persistent = true
+  person(10, "Carol").persistent = true
+  person( 0, "David").persistent = true
+}
+
+person(  0, "Erica")
+person( 10, "Frank")
+person( 10, "Janet")
+person(  0, "Harry")
+
+with omod_instance {
+  show_message(self.name)
+}
+```
+````
+
+| Room       | Order (left first)                                                                        | Formal                                                                                  |
+| ---------- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Initial    | Harry,&nbsp;Janet,&nbsp;Frank,&nbsp;Erica,<br />David,&nbsp;Carol,&nbsp;Bobby,&nbsp;Alice | Youngest to oldest, ignoring persistent tag                                             |
+| Subsequent | Harry,&nbsp;Janet,&nbsp;Frank,&nbsp;Erica<br/>Carol,&nbsp;Bobby,&nbsp;David,&nbsp;Alice   | Youngest to oldest non-`persistent`; then highest depth, then youngest for `persistent` |
+
+Step Events also exhibit similar behavior.
+
+| Room       | Order (left first)                                                                       | Formal                                                                                   |
+| ---------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Initial    | Alice,&nbsp;Bobby,&nbsp;Carol,&nbsp;David,<br/>Erica,&nbsp;Frank,&nbsp;Janet,&nbsp;Harry | Oldest to youngest, ignoring persistent tag                                              |
+| Subsequent | Alice,&nbsp;David,&nbsp;Bobby,&nbsp;Carol,<br/>Erica,&nbsp;Frank,&nbsp;Janet,&nbsp;Harry | Lowest depth, then oldest for `persistent`; then oldest to youngest for non-`persistent` |
+
+I am not sure how this pattern continues for other Events, or how Instances created by Rooms fit into this model. If you know, feel free to [reach out](/rm-docs/intro/docs#contribute).

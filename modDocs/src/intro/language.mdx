@@ -1,0 +1,155 @@
+---
+title: 'Catspeak and GML'
+desc: 'Short snippets of Catspeak and GML code for quick comparisons.'
+order: 4
+---
+
+import CodeTable from '@/components/CodeTable.astro'
+import CodeFix from '@/components/CodeFix.astro'
+
+# Overview
+
+[Catspeak](https://www.katsaii.com/catspeak-lang/3.1.2/lan-overview.html) is very similar to [Gamemaker Language (GML)](https://manual.gamemaker.io/lts/en/GameMaker_Language/GML_Overview/GML_Overview.htm), and both are [high-level](https://en.wikipedia.org/wiki/High-level_programming_language), [dynamically-typed](https://en.wikipedia.org/wiki/Type_system#DYNAMIC), [procedural](https://en.wikipedia.org/wiki/Procedural_programming) programming languages featuring [first-class functions](https://en.wikipedia.org/wiki/First-class_function). Both run on top of the Gamemaker engine, which is [object-oriented](https://en.wikipedia.org/wiki/Object-oriented_programming) with an [event-driven](https://en.wikipedia.org/wiki/Event-driven_programming) model. If those buzzwords confuse you, ignore them, and let's write some code.
+
+If you want more information, I recommend looking at the [GameMaker](https://manual.gamemaker.io/lts/en/GameMaker_Language/GML_Overview/GML_Overview.htm) and [Catspeak](https://www.katsaii.com/catspeak-lang/3.1.2/lan-overview.html) documentation sites. If you've used [Javascript](https://en.wikipedia.org/wiki/JavaScript), a lot of the basics will be similar.
+
+# Semicolons
+
+Both GML and Catspeak use semicolons (`;`) to separate statements within a single line.
+
+<CodeTable
+  languages={['sp', 'gml']}
+  entries={[['let i = 0; i += 2', 'var i = 0; i += 2']]}
+/>
+
+Because of [boring technical reasons](/rm-docs/modding/rmml#coding-in-one-line), all modded code must fit within one line, using semicolons to separate statements.
+
+# The `with` Statement and `self`
+
+The `with` statement is GML and Catspeak's most powerful scope-changing and Instance-finding tool. When used with a struct-like structure, it changes `self` to reference that struct.
+
+```sp
+let struct = {
+  "name": "Fern",
+  "sprite": splayer_offscreen,
+}
+with struct {
+  if self.name == "Fern" {
+    -- runs
+  }
+}
+```
+
+Naturally, this isn't very useful. What _is_ useful though, is when you use it with an Instance.
+
+```sp {4}
+let player = instance_find(oplayer, 0)
+with player {
+  self.y -= 10
+  draw_self()
+}
+```
+
+The highlighted function draws whatever `self` is, which we get to manipulate using a `with` statement. We can also use `with` statements with Game Objects (or the `all` keyword) to loop over Game Objects.
+
+```sp
+with par_enemy {
+  instance_destroy(self)
+}
+```
+
+Instead of using `instance_number`, `instance_find`, and a `while` loop, we just use a `with` statement. Keep in mind that if you're using modded Game Objects with a `with` statement, you'll want to filter for only your Instances.
+
+# Advanced Scoping
+
+If you've come from Javascript or other similar languages, then you might expect something like this to work.
+
+```sp {3}
+let _i = 0
+let count = fun (a,b) {
+  _i += 1
+  return _i
+}
+
+let a = count()
+```
+
+You would be disappointed, because line 3 throws an error. In other languages, the variable `_i` would be available to the function, however in Catspeak functions are far more isolated, so you crash when you try to add `1` to `undefined`.
+
+# Catspeak Truthy Values
+
+When using boolean expressions, certain values can be coerced into `true` or `false`. For example, the following code works.
+
+```sp
+if 123 { show_message("Hello World!") }
+```
+
+This is because `123` can be coerced into a `true`-like value. Here is a list of keywords that do or don't coerce into true-like values.
+
+<CodeTable
+  caption="Truthy Values"
+  languages={['sp', 'sp']}
+  labels={[undefined, 'Truthy-ness', undefined]}
+  entries={[
+    ['123', 'true', 'Positive numbers'],
+    ['0', 'false', 'Zero'],
+    ['-123', 'false', 'Negative numbers (!!!)'],
+    ['NaN', 'false', 'Not-A-Number'],
+    ['undefined', 'false', 'Undefined keyword'],
+    ['"Hello"', '-- runtime error', 'Strings of any kind (!!!)'],
+    ['{ }', 'true', 'Structs of any kind'],
+  ]}
+/>
+
+This probably also applies to GML, but I've only tested it on Catspeak. Fun fact: <CodeFix lang="sp" code='!"Hello World"' inline/> is the simplest "Hello World" Catspeak program, since the unary boolean operator causes an exception and prints the string in the error message.
+
+# Differences
+
+This is a condensed list of the major differences between the two languages. If you want something else added, slap that [contribute](/rm-docs/intro/docs#contribute) button.
+
+<CodeTable
+  caption="Catspeak and GML Comparisons"
+  languages={['sp', 'gml']}
+  entries={[
+    ['let x = 1', 'var x = 1', 'Variable assignment'],
+    ['fn = fun(a) { ... }', 'fn = function(a) { ... }', 'Function declaration'],
+    ['self.x', 'x', 'Implicit/explicit self'],
+    ['a // b; a //= b', 'a div b; a = a div b', 'Modulo division operator'],
+    ['a and b or c', 'a && b || c', 'Boolean operators'],
+    ['a = if b { c } else { d }', 'a = b ? c : d', 'Ternary operator'],
+    ['-- comment', '// comment', 'Comments'],
+    ['x += 1', 'x++', 'Unary increment/decrement'],
+    ['r = room_get()', 'r = room', 'Special variable access'],
+    [
+      'instance_find(oplayer).state',
+      'oplayer.state',
+      'Singleton Instance access',
+    ],
+    ["c = 'A'", 'c = ord("A")', 'Character shorthand'],
+    [
+      'let _i = 0\nwhile _i < 4 {\n  ...\n  _i += 1\n}',
+      'repeat 4 { ... }',
+      'Repeat loops',
+    ],
+    [
+      'match a {\n  case 0 { b = 1 }\n  else { b = 0 }\n}',
+      'switch a {\n  case 0:\n    b = 1\n    break\n  default:\n    b = 0\n}',
+      'Switch Statement',
+    ],
+  ]}
+/>
+
+# Constructors
+
+Catspeak also lacks constructor functions, however you can emulate them using normal structs and functions. Catspeak doesn't preserve self scoping in the same way that GML does, so you can't use `self` properly.
+
+<CodeTable
+  caption="Constructor Comparison"
+  languages={['sp', 'gml']}
+  entries={[
+    [
+      'let Vec = {}\nvec.make = fun (x, y) {\n  return { "x": x, "y": y }\n}\nvec.add = fun (v1, v2) {\n  v1.x += v2.x\n  v1.y += v2.y\n}\n\nlet a = Vec.make(2, 3)\nlet b = Vec.make(4, 5)\nVec.add(a, b)',
+      'function Vec(_x, _y) constructor {\n  x = _x;\n  y = _y;\n\n  static add = function(v2) {\n    x += v2.x\n    y += v2.y\n  }\n}\n\nvar a = new Vec(2, 3)\nvar b = new Vec(4, 5)\na.add(b)',
+    ],
+  ]}
+/>

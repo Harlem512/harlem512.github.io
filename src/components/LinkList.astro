@@ -1,0 +1,17 @@
+---
+interface Props {
+  links: [label: string, href: string][]
+}
+
+const { links } = Astro.props
+---
+
+<ul>
+  {
+    links.map(([label, href]) => (
+      <li>
+        <a href={href}>{label}</a>
+      </li>
+    ))
+  }
+</ul>

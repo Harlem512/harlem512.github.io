@@ -1,0 +1,106 @@
+---
+title: 'Undertale Mod Tool'
+desc: 'A powerful tool for opening the `data.win` file.'
+order: 0
+---
+
+# What
+
+[Undertale Mod Tool](https://github.com/UnderminersTeam/UndertaleModTool) (UTMT or UMT) is a tool for inspecting the source code of Rusted Moss (and other GameMaker games). This includes room layouts, sprites, Game Objects, Event code, and more. To inspect code, open the `data.win` file inside the [Steam install directory](/rm-docs/intro/quickstart#where-are-my-files) with Undertale Mod Tool and watch the magic happen.
+
+Undertale Mod Tool is a powerful but imperfect tool, and we can improve our lives slightly.
+
+# Close the function cache
+
+When first opening the `data.win` file, you'll be presented with a "Building the cache of all sub-functions..." popup, which can be safely closed. From what I understand, this doesn't significantly affect anything.
+
+# `ExportAllCode.csx`
+
+Instead of using the default "Find in Code" search, you can export all of the game's code and use a code editor like [Visual Studio Code](https://code.visualstudio.com/) to search the source files. Event code files start with `gml_Object_{GAME_OBJECT_NAME}` and global script files start with `gml_GlobalScript_{SCRIPT_NAME}`.
+
+Using Undertale Mod Tool to search for functions is very slow, and looking at multiple code files at the same time isn't supported.
+
+# Where the Code At
+
+Most of the game's code is in Events, which are accessed from the "Game objects" tab in Undertale Mod Tool. Find the Game Object you want, and open the Event to see the source code. Some Event code references script functions, which are functions inside global script files in the `Code` tab.
+
+As a practical example, we can look at the weapon pickup Game Object, `opickup_gun`. The `draw` event looks like this:
+
+```gml
+gpu_set_fog(true, c_white, -1, 0)
+x -= 1
+scr_draw_weapon_pickup(index)
+x += 2
+scr_draw_weapon_pickup(index)
+x -= 1
+y += 1
+scr_draw_weapon_pickup(index)
+y -= 2
+scr_draw_weapon_pickup(index)
+y += 1
+gpu_set_fog(false, c_black, 0, 0)
+scr_draw_weapon_pickup(index)
+```
+
+As a file or in the `Code` section, this is `gml_Object_opickup_gun_Draw_0` and the `gml_Object_*` prefix tells us it's Event code. While `gpu_set_fog` is a GameMaker function, `scr_draw_weapon_pickup` is a script function:
+
+```gml
+...
+function scr_draw_weapon_pickup(argument0) //gml_Script_scr_draw_weapon_pickup
+{
+  if global.ameli_mode_
+    draw_sprite_ext(...)
+  else
+    draw_sprite_ext(...)
+}
+```
+
+Undertale Mod Tool lets us jump directly to this file by right clicking, or we can search for the function name. This function is located in `gml_GlobalScript_scr_draw_pickup`, a global script starting with `gml_GlobalScript_*`.
+
+# Use a fork
+
+A [fork](<https://en.wikipedia.org/wiki/Fork_(software_development)>) describes a modification of software that diverges from the "normal" version. The normal version of Undertale Mod Tool doesn't properly understand certain code.
+
+```gml
+if (ini_read_string("controller_events", "create", "") != "")
+  ds_map_set(global.mod_map, "controller_events_create",
+    ini_read_string("controller_events", "create", "")
+      .ini_read_string("controller_events", "create", "")
+      .parseString(global.__catspeak__)
+      .ini_read_string("controller_events", "create", "")
+      .ini_read_string("controller_events", "create", "")
+      .parseString(global.__catspeak__)
+      .compileGML(global.__catspeak__)
+  )
+```
+
+However, there is a fork by [Pizza Tower modders](https://github.com/XDOneDude/UndertaleModToolCE) that can understand this code better.
+
+```gml
+if (ini_read_string("controller_events", "create", "") != "")
+  ds_map_set(global.mod_map, "controller_events_create",
+    global.__catspeak__.compileGML(
+      global.__catspeak__.parseString(
+        ini_read_string("controller_events", "create", "")
+      )
+    )
+  )
+```
+
+However, some code isn't readable by the Pizza Tower fork, and future versions of the normal version (or possibly some other fork) might work better.
+
+# Error Comments
+
+If you go digging for long enough, eventually you'll find something like this.
+
+```gml
+/**
+WARNING: Recursive script decompilation (for member variable name resolution) failed for gml_Script_active_create_ability_init_gml_GlobalScript_abilities
+
+System.Exception: Unable to find the var name for anonymous code object gml_Script_active_create_ability_init_gml_GlobalScript_abilities
+   at UndertaleModLib.Decompiler.Decompiler.<DecompileFromBlock>g__FindActualNameForAnonymousCodeObject|3_2(DecompileContext context, UndertaleCode anonymousCodeObject) in UndertaleModTool\UndertaleModTool\UndertaleModLib\Decompiler\Decompiler.cs:line 587
+*/
+...
+```
+
+For reasons beyond me, Undertale Mod Tool can't properly decompile parts of Rusted Moss's code, which ([mostly](/rm-docs/modding/limitations#decompilation)) prevents us from using Undertale Mod Tool to rewrite code. Understanding what's missing requires either improving Undertale Mod Tool or reading the [raw bytecode](/rm-docs/gml/architecture#bytecode), so we're not going to do that.

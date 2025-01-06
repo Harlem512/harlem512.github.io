@@ -1,0 +1,129 @@
+---
+title: 'Internal Identifiers'
+desc: "GameMaker's internal identifiers for everything the engine tracks"
+order: 4
+---
+
+import CodeTable from '@/components/CodeTable.astro'
+
+# A Story
+
+If you've used GameMaker for a bit, you might know what's wrong with this.
+
+```sp
+instance_create_depth(omod_instance, 0, 0, 10)
+```
+
+The arguments are in the wrong order, but instead of providing a helpful error message, GameMaker accepts the arguments and keeps running. The reason why GameMaker doesn't reject this function call is because `omod_instance` is actually just a number. This is what GameMaker actually sees:
+
+```sp
+instance_create_depth(329, 0, 0, 10)
+```
+
+# "Pointers"
+
+If you've taken a low-level programming course or come from other game engines, then this probably isn't too unexpected. Because of boring performance reasons, it's better to use a single number than an entire string, at the cost of making things slightly more difficult.
+
+Basically everything the game tracks is secretly just a number. This includes Game Objects, Instances, Sprites, Rooms, audio assets, shaders, constants (ie `ev_create`, `vk_home`, etc ), some GML language keywords (`self`, `all`, `true`, etc), functions, data structures (buffers, ds_maps, etc), and probably more I haven't run into yet.
+
+Here's a few common keywords and their internal numbers.
+
+<CodeTable
+  caption="Internal Keywords"
+  languages={['gml', 'sp']}
+  labels={['Keyword', 'Internal Value']}
+  entries={[
+    ['true', '1'],
+    ['false', '0'],
+    ['self', '-1'],
+    ['other', '-2'],
+    ['all', '-3'],
+    ['noone', '-4'],
+  ]}
+/>
+
+For most use cases, this information is irrelevant. However, if you're using `json_stringify` for serialization or debugging purposes, you should use `json_encode` with GML data structures.
+
+# Undertale Mod Tool
+
+When using Undertale Mod Tool, eventually you'll run into code that looks like this.
+
+```gml
+// gml_Object_oplayer_Create_0
+...
+  sprite_dead = 595
+  sprite_hit = 1369
+  hair_start_col = 3026478
+  hair_end_col = 6707256
+  hair_number = 3
+  hair_size = 2.5
+  hair_alt = -1
+...
+```
+
+Despite all seven variables being initialized to numbers, their actual purpose varies dramatically. The first two, `sprite_dead` and `sprite_hit`, are referencing Sprite indexes for `splayer_maya_dead` and `splayer_maya_hit` respectively. `hair_start_col` and `hair_end_col` are hex code colors, `2E 2E 2E` and `66 58 38` in RGB. `hair_alt` is `-1` so it [evaluates as `false`](/rm-docs/intro/language#catspeak-truthy-values) for conditional statements, but is normally an array. `hair_number` and `hair_size` are the only two "normal" numbers here.
+
+When using Undertale Mod Tool, you can right click on one of these weird numbers and get a list of possible assets it could be. If you've exported the code or are looking for references to a Game Object or Sprite, you might want a list of every internal identifier.
+
+# Identifier Dump Mod
+
+The key technology here are the `_get_name` functions, which take an identifier and return the name of the asset. Additionally, these identifiers **_are not stable_**. If possible, you should use the actual names of the asset, or find the index at runtime.
+
+````rmml
+# controller
+
+## create
+
+```sp
+global.ripper = {}
+global.ripper.type = 2
+global.ripper.saved_index = 0
+global.ripper.max = 100
+```
+
+## step
+
+```sp
+let log = file_text_open_append("asset_list.txt")
+
+let i = 0
+while i < global.ripper.max {
+  let name
+  let next
+  let exists = false
+  match global.ripper.type {
+    case 0 {
+      name = sprite_get_name(global.ripper.saved_index)
+      exists = sprite_exists(global.ripper.saved_index)
+      next = "room"
+    }
+    case 1 {
+      name = room_get_name(global.ripper.saved_index)
+      exists = room_exists(global.ripper.saved_index)
+      next = "object"
+    }
+    case 2 {
+      name = object_get_name(global.ripper.saved_index)
+      exists = object_exists(global.ripper.saved_index)
+      next = "END"
+    }
+    case 4 {
+      file_text_close(log)
+      !"Done"
+    }
+  }
+
+  if !exists {
+    file_text_write_string(log, next + "\n")
+    global.ripper.saved_index = -1
+    global.ripper.type += 1
+  } else {
+    file_text_write_string(log, string(global.ripper.saved_index) + "\t:" + name + "\n")
+  }
+  i += 1
+  global.ripper.saved_index += 1
+}
+
+file_text_close(log)
+```
+````

@@ -1,0 +1,54 @@
+{
+  "comment": "Syntax highlighting for .ini mods",
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "displayName": ".ini Mod",
+  "name": "mini",
+  "scopeName": "source.mini",
+  "patterns": [
+    {
+      "include": "#tag"
+    },
+    {
+      "include": "#value"
+    },
+    {
+      "include": "#head"
+    },
+    {
+      "include": "#comment"
+    }
+  ],
+  "repository": {
+    "tag": {
+      "match": "^[a-z_0-9]+(?=\\s*+=)",
+      "name": "storage.type.mini"
+    },
+    "head": {
+      "match": "\\[[a-z_]+\\]",
+      "name": "entity.name.function.mini"
+    },
+    "value": {
+      "begin": "=\\s*",
+      "end": "$",
+      "patterns": [
+        {
+          "begin": "['|\"]",
+          "end": "['|\"]$",
+          "patterns": [
+            {
+              "include": "source.catspeak"
+            }
+          ]
+        },
+        {
+          "match": ".*",
+          "name": "string.other.mini"
+        }
+      ]
+    },
+    "comment": {
+      "match": "^#.*$",
+      "name": "comment.line.number-sign.mini"
+    }
+  }
+}

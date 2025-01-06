@@ -1,0 +1,35 @@
+---
+import { render } from 'astro:content'
+import { sortedArticles, getArticle } from '@/code/docsCollection'
+import ModDocs from '@/layouts/ModDocs.astro'
+
+export async function getStaticPaths() {
+  return sortedArticles.flatMap(({ articles }) =>
+    articles.map(({ id, data }) => ({
+      params: { path: id },
+      props: data,
+    })),
+  )
+}
+
+const { path } = Astro.params
+const { desc, title } = Astro.props
+
+const article = await getArticle(path)
+const { Content, headings } = await render(article)
+---
+
+<ModDocs
+  title={title}
+  desc={desc}
+  sidebarProps={{
+    headings: {
+      [article.id]: headings.filter(({ depth }) => depth === 1),
+    },
+    article: article.id,
+  }}
+>
+  <article class="md">
+    <Content />
+  </article>
+</ModDocs>

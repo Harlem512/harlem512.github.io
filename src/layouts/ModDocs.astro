@@ -1,0 +1,34 @@
+---
+import Sidebar, {
+  type Props as SidebarProps,
+} from '@/components/DocsSidebar.astro'
+import Metadata from './Metadata.astro'
+
+export interface Props {
+  title: string
+  desc: string
+  sidebarProps?: SidebarProps
+}
+const { title, desc, sidebarProps } = Astro.props
+---
+
+<Metadata title={title} description={desc}>
+  <header>
+    <h1>{title}</h1>
+    <aside>{desc}</aside>
+  </header>
+  <Sidebar {...sidebarProps} />
+  <main>
+    <slot />
+  </main>
+  <footer>
+    <aside>DOCS BETA</aside>
+    <a href="https://github.com/Harlem512/harlem512.github.io/issues/1">
+      What's New
+    </a>
+    <a href="/rm-docs/intro/docs#contribute">Contribute</a>
+    <p>
+      A <a href="/">Harlem512 Production</a>
+    </p>
+  </footer>
+</Metadata>

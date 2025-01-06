@@ -1,0 +1,145 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "catspeak",
+  "patterns": [
+    {
+      "include": "#expression"
+    }
+  ],
+  "repository": {
+    "expression": {
+      "patterns": [
+        {
+          "include": "#comment"
+        },
+        {
+          "include": "#constant"
+        },
+        {
+          "include": "#keyword"
+        },
+        {
+          "include": "#variable"
+        }
+      ]
+    },
+    "constant": {
+      "patterns": [
+        {
+          "match": "\\b(false|true|undefined|NaN|infinity)\\b",
+          "name": "constant.language.boolean.catspeak"
+        },
+        {
+          "match": "\\b(self|global)\\b",
+          "name": "variable.other.object.property.catspeak",
+          "name2": "support.type.object.module.catspeak"
+        },
+        {
+          "name": "string.quoted.double.catspeak",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.catspeak",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "match": "'\\\\.'",
+          "name": "constant.character.escape.catspeak"
+        },
+        {
+          "match": "'([^\\\\']|\\\\.)'",
+          "name": "constant.character.catspeak"
+        },
+        {
+          "match": "#(?:[0-9a-fA-F]{3}){1,2}\\b",
+          "name": "constant.language.catspeak"
+        },
+        {
+          "match": "\\b0(b|x)\\d(\\d|_)*\\b",
+          "name": "constant.numeric.catspeak"
+        },
+        {
+          "match": "\\b\\d(\\d|_)*\\.\\d+(\\d|_)*\\b",
+          "name": "constant.numeric.catspeak"
+        },
+        {
+          "match": "\\b\\d(\\d|_)*\\b",
+          "name": "constant.numeric.catspeak"
+        }
+      ]
+    },
+    "comment": {
+      "patterns": [
+        {
+          "name": "comment.line.semicolon.catspeak",
+          "begin": "--",
+          "end": "$"
+        }
+      ]
+    },
+    "keyword": {
+      "patterns": [
+        {
+          "match": "\\blet\\b",
+          "name": "storage.type.catspeak"
+        },
+        {
+          "match": "\\bfun\\b",
+          "name": "storage.type.function.catspeak"
+        },
+        {
+          "match": "\\b(if|else)\\b",
+          "name": "keyword.control.conditional.catspeak"
+        },
+        {
+          "match": "\\b(match|case)\\b",
+          "name": "keyword.control.switch.catspeak"
+        },
+        {
+          "match": "\\b(break|while|with|return|continue)\\b",
+          "name": "keyword.control.loop.catspeak"
+        },
+        {
+          "match": "\\b(return|do)\\b",
+          "name": "keyword.control.flow.catspeak"
+        },
+        {
+          "match": "\\b(or|and|xor)\\b",
+          "name": "keyword.operator.logical.catspeak"
+        },
+        {
+          "match": "\\.|!|~|-|\\+|\\*|\\/|%|&|\\|\\^|<|>|=",
+          "name": "keyword.operator.catspeak"
+        },
+        {
+          "match": "\\bnew\\b",
+          "name": "keyword.operator.new.catspeak"
+        }
+      ]
+    },
+    "variable": {
+      "patterns": [
+        {
+          "match": "\\b[A-Za-z_][A-Za-z_\\-0-9]*\\s*(?=\\()",
+          "name": "entity.name.function.catspeak"
+        },
+        {
+          "match": "\\b[A-Za-z_][A-Za-z_\\-0-9]*(?=\\.)",
+          "name": "variable.other.object.js"
+        },
+        {
+          "match": "(?<=\\.)[A-Za-z_][A-Za-z_\\-0-9]*\\b",
+          "name": "variable.other.property.catspeak"
+        },
+        {
+          "match__": "\\b[A-Za-z_][A-Za-z_\\-0-9]*\\b",
+          "name": "variable.name.catspeak"
+        }
+      ]
+    }
+  },
+  "scopeName": "source.catspeak"
+}

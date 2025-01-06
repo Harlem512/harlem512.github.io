@@ -1,0 +1,80 @@
+---
+title: 'Limitations'
+desc: "We'll go over the limitations of the modding system and how we can break the rules."
+order: 2
+---
+
+# What Limits?
+
+Rusted Moss's modding support is very powerful. Writing arbitrary code as if we had access to the full source code means we don't have the same restrictions as other modding systems. Instead of being limited by modding support or external tools, we're limited by Rusted Moss's _interesting_ codebase and GameMaker's runtime limitations; if you can make it in normal GameMaker, you can make 99% of it on top of Rusted Moss's modding system.
+
+# Shaders
+
+New shaders are impossible to make. This is a limitation of GameMaker and cannot be bypassed. Rusted Moss does offer a few [shaders](/rm-docs/mose/misc#shaders) that we can use, and we can emulate a lot of shader behavior using software rendering. Just keep in mind that you will take a [performance](/rm-docs/modding/performance) hit for emulating shader behavior with software.
+
+# One Thousand Milliseconds
+
+If you've ever code like this, then you're familiar with this error.
+
+```sp
+let i = 0
+while i < 10 {
+  draw_text(0, i * 10, "hello")
+}
+```
+
+Catspeak limits execution time to one thousand milliseconds (one second), starting when you first enter Catspeak. For our purposes, this means that every Event we write must fully complete within that time frame.
+
+For almost all purposes, this is plenty of time. Most code is limited to 16ms anyway (the duration of one frame), so you'll only run into this limit if you're doing something bad (like trying to [build a mod loader](/rm-docs/modding/rmml)).
+
+# Decompilation
+
+TODO
+
+# LTS Bugs
+
+TODO
+
+# Sprites
+
+GameMaker has a lot of support for Sprite manipulation. Almost anything you can do with Sprites in the editor you can do at runtime. However, there are GPU performance considerations for creating a lot of new Sprites. Each 
+
+# Game Object Sadness
+
+GameMaker's runtime support for Game Objects is limited. We can't modify a Game Object's parent, add new Game Objects, or change default values for Game Objects. Some of these can be bypassed, but others are impossible to change.
+
+## "New" Game Objects
+
+We can emulate new Game Objects using a custom Instance variable. We lose most of the convenience, and our "new" Game Objects aren't isolated in `with` blocks.
+
+````rmml {5,8,16,19}
+# controller
+## create
+```
+instance_create_depth(0,0, 0, omod_instance, {
+  "type": 0
+})
+instance_create_depth(0,0, 0, omod_instance, {
+  "type": 1
+})
+```
+
+# instance
+## create
+```
+match self.type {
+  case 0 {
+    self.sprite_index = splayer_offscreen
+  }
+  case 1 {
+    self.sprite_index = splayer_maya_offscreen
+  }
+}
+```
+````
+
+[Rusted Moss Mod Loader](/rm-docs/modding/rmml) does this technique to isolate each mod, and has the same issues.
+
+# Missing Events
+
+

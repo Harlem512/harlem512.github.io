@@ -1,0 +1,17 @@
+---
+import highlighter from '@/code/highlighter'
+
+interface Props {
+  code: string
+  lang: string
+  inline?: boolean
+}
+
+const { code, lang, inline = false } = Astro.props
+
+const html = await highlighter.codeToHtml(code, lang, {
+  inline,
+})
+---
+
+<Fragment set:html={html} />

@@ -1,0 +1,71 @@
+{
+  "comment": "Slimmed down Markdown syntax for RMML mods",
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "displayName": "RMML Markdown",
+  "name": "rmml",
+  "scopeName": "text.html.markdown.codeblock.rmml",
+  "patterns": [
+    {
+      "include": "#fenced_code_block_catspeak"
+    },
+    {
+      "include": "#headers"
+    },
+    {
+      "comment": "anything that isn't a header or code fence is ignored",
+      "include": "#words"
+    }
+  ],
+  "repository": {
+    "headers": {
+      "patterns": [
+        {
+          "match": "^#{1,2}\\s+\\w+$",
+          "name": "markup.heading.markdown"
+        }
+      ]
+    },
+    "words": {
+      "patterns": [
+        {
+          "match": ".*",
+          "name": "comment.block.rmml"
+        }
+      ]
+    },
+    "fenced_code_block_catspeak": {
+      "comment": "Matches all code blocks",
+      "begin": "(^|\\G)(\\s*)(`{3,}|~{3,})\\s*(?i:(catspeak|sp|\n)((\\s+|:|\\{)[^`~]*)?$)",
+      "name": "markup.fenced_code.block.markdown",
+      "end": "(^|\\G)(\\2|\\s{0,3})(\\3)\\s*$",
+      "beginCaptures": {
+        "3": {
+          "name": "punctuation.definition.markdown"
+        },
+        "4": {
+          "name": "fenced_code.block.language"
+        },
+        "5": {
+          "name": "fenced_code.block.language.attributes"
+        }
+      },
+      "endCaptures": {
+        "3": {
+          "name": "punctuation.definition.markdown"
+        }
+      },
+      "patterns": [
+        {
+          "begin": "(^|\\G)(\\s*)(.*)",
+          "while": "(^|\\G)(?!\\s*([`~]{3,})\\s*$)",
+          "contentName": "meta.embedded.block.catspeak",
+          "patterns": [
+            {
+              "include": "source.catspeak"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

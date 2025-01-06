@@ -1,0 +1,54 @@
+---
+import { render } from 'astro:content'
+import { sortedArticles } from '@/code/docsCollection'
+import ModDocs from '@/layouts/ModDocs.astro'
+import type { MarkdownHeading } from 'astro'
+
+const allHeaders: {
+  [id: string]: MarkdownHeading[]
+} = {}
+
+const transformed = await Promise.all(
+  sortedArticles.map(async ({ topic, articles }) => ({
+    id: topic.id,
+    title: topic.data.title,
+    desc: topic.data.desc,
+    articles: await Promise.all(
+      articles.map(async (article) => {
+        const { Content, headings } = await render(article)
+        allHeaders[article.id] = headings.filter(({ depth }) => depth === 1)
+        return {
+          Content,
+          id: article.id,
+          title: article.data.title,
+          desc: article.data.desc,
+        }
+      }),
+    ),
+  })),
+)
+---
+
+<ModDocs
+  title="Single-Page Docs"
+  desc="Single page version of the Rusted Moss Modding Documentation."
+  sidebarProps={{ single: true, headings: allHeaders }}
+>
+  {
+    transformed.map(({ id, title, desc, articles }) => (
+      <>
+        <h1 id={id}>{title}</h1>
+        <aside>{desc}</aside>
+        {articles.map(({ Content, id, title, desc }) => (
+          <>
+            <h2 id={id}>{title}</h2>
+            <aside>{desc}</aside>
+            <article class="md">
+              <Content />
+            </article>
+          </>
+        ))}
+      </>
+    ))
+  }
+</ModDocs>

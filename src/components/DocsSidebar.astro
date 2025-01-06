@@ -1,0 +1,64 @@
+---
+import type { MarkdownHeading } from 'astro'
+import { sortedArticles } from '@/code/docsCollection'
+
+export interface Props {
+  headings?: {
+    [id: string]: MarkdownHeading[]
+  }
+  article?: string
+  single?: boolean
+}
+const { headings, article, single } = Astro.props
+---
+
+<nav>
+  <script>
+    window.innerWidth > 950 && document.getElementById('here')?.scrollIntoView()
+  </script>
+  <section>
+    <h1>Mod Docs <a href="/rm-docs">↗</a></h1>
+    {
+      single ? (
+        <a href="/rm-docs">Multi-Page</a>
+      ) : (
+        <a href="/rm-docs/page">Single-Page</a>
+      )
+    }
+
+    <ul>
+      {
+        sortedArticles.map(({ topic, articles }) => (
+          <li>
+            <details open>
+              <summary>{topic.data.title}</summary>
+              <ul>
+                {!single && (
+                  <li id={topic.id}>
+                    <a href={`/rm-docs/${topic.id}`}>Index</a>
+                  </li>
+                )}
+                {articles.map(({ id, data }) => (
+                  <li id={article === id ? 'here' : undefined}>
+                    <a href={single ? `#${id}` : `/rm-docs/${id}`}>
+                      {data.title}
+                    </a>
+                    {headings && headings[id] && (
+                      <ol>
+                        {headings[id].map(({ text, slug }) => (
+                          <li>
+                            <a href={`#${slug}`}>{text}</a>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</nav>

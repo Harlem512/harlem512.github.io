@@ -1,0 +1,192 @@
+---
+title: 'Rusted Moss Mod Loader'
+desc: 'How RMML works and why you want it.'
+order: 1
+---
+
+import CodeTable from '@/components/CodeTable.astro'
+
+# Paid Shill
+
+Throughout this documentation, there have been a lot of references to Rusted Moss Mod Loader (RMML). RMML is a tool created by me to aid in my personal modding journey (not that it can't be used by others), and its design is heavily influenced by its [history](#history). I highly recommend using it, or building something similar, if you are going to do serious modding.
+
+Directions for installing RMML are available [here](/rm-docs/intro/install#rusted-moss-mod-loader), this article is concerned with the technical details about how and why it exists.
+
+# Why
+
+But why do we need this? Rusted Moss modding has three core issues and two minor annoyances that RMML was built to fix. Both minor issues are [no longer an issue](#history), but the three core issues are unresolved.
+
+## Coding in One Line
+
+The most obvious issue is that all Catspeak code must fit in one line. This is a byproduct of mods existing as `.ini` files, instead of something more purpose-built.
+
+```mini
+create = 'while true { show_message("Hello World") }'
+```
+
+For short programs, this isn't an issue. However, it quickly becomes unmanageable for larger mods.
+
+```mini
+create='if global.__ameli_hair{return}let pal_folder="mods/ameli_palette/";let palette=sprite_add(pal_folder+"palette.png",1,false,false,0,0)let surf=surface_create(1,1)surface_set_target(surf)draw_sprite(palette,0,-1,-55)let buff=buffer_create(8,buffer_fixed,1)buffer_get_surface(buff,surf,0)global.__ameli_hair=buffer_peek(buff,0,buffer_u32)surface_reset_target()surface_free(surf)buffer_delete(buff)shader_replace_simple_set_hook(shd_palette)if!global.player_use_shader{shader_set_uniform_f(shader_get_uniform(shd_palette,"col_num"),56)shader_set_uniform_f(shader_get_uniform(shd_palette,"pal_num"),2)shader_set_uniform_f(shader_get_uniform(shd_palette,"pal_index"),1)shader_set_uniform_f_array(shader_get_uniform(shd_palette,"palette_uvs"),[0,0,1,1])}texture_set_stage(shader_get_sampler_index(shd_palette,"palette"),sprite_get_texture(palette,0))let out_dir=temp_directory_get()+"rmap/";let f=file_find_first(pal_folder+"DO_NOT_TOUCH/*.png",0)while true{if f==""{break}let name=string_split(f,".png")[0]let index=asset_get_index(name)let width=sprite_get_width(index)let height=sprite_get_height(index)let subimage_number=sprite_get_number(index)let xoffset=sprite_get_xoffset(index)let yoffset=sprite_get_yoffset(index)let dest_img=out_dir+f;let pal_sprite=sprite_add(pal_folder+"DO_NOT_TOUCH/"+f,1,false,false,0,0)let surf=surface_create(width*subimage_number,height)surface_set_target(surf)draw_sprite(pal_sprite,0,0,0)surface_reset_target()surface_save(surf,dest_img)surface_free(surf)sprite_delete(pal_sprite)match index{case smaya_legs_idle{global.__ameli_idle=sprite_add(dest_img,subimage_number,false,false,xoffset,yoffset)}case smaya_legs_run{global.__ameli_run=sprite_add(dest_img,subimage_number,false,false,xoffset,yoffset)}case splayer_maya_legs_crouching{global.__ameli_crouch=sprite_add(dest_img,subimage_number,false,false,xoffset,yoffset)}else{sprite_replace(index,dest_img,subimage_number,false,false,xoffset,yoffset)}}f=file_find_next()}if!global.player_use_shader{shader_set_uniform_f_array(shader_get_uniform(shd_palette,"palette_uvs"),[0,0,0,0])}shader_replace_simple_reset_hook()sprite_delete(palette)'
+```
+
+This is the `create` function for one of my mods (Ameli Palette) and condenses 100 commented lines into 2000 characters. Obviously, your code doesn't need to be this dense; this code is generated using a script that removes all unnecessary characters. But there's an even bigger issue than unreadable, unmaintainable code.
+
+Because of [boring technical reasons](https://github.com/katsaii/catspeak-lang/blob/06734ff95ae947d1fd2ba677a061c3c24725e529/src-lts/scripts/scr_catspeak_init/scr_catspeak_init.gml#L226), Catspeak is limited to about 4000 characters per line of code. Since all Rusted Moss Event code is a single line, this essentially places a hard limit on the size of a potential mod.
+
+RMML loads Event code from parts a normal text file, which lets us use line breaks.
+
+## One Function per Event
+
+Lets say I have these two mods. What do you expect to happen?
+
+```mini
+[general]
+mod_enabled = 1
+[meta_info]
+mod_0 = foo.ini
+mod_1 = bar.ini
+```
+
+<CodeTable
+  languages={['mini', 'mini']}
+  labels={['foo.ini', 'bar.ini']}
+  entries={[
+    [
+      '[object_list]\ncontroller = enabled\n[controller_events]\ncreate=\'show_message("Foo")\'',
+      '[object_list]\ncontroller = enabled\n[controller_events]\ncreate=\'show_message("Bar")\'',
+    ],
+  ]}
+/>
+
+If you're used to other modding systems, you might expect to see both "Foo" and "Bar". In Rusted Moss, this isn't the case. Because of [boring technical reasons](/rm-docs/mose/mods#globalmod_map), only a single Catspeak function can be stored per Event, so it only prints "Bar", the message from the mod loaded second.
+
+RMML gets around this by storing Event code in its own data structure and providing `global.mod_map` a function that reads from that data structure and calls all code for the Event, instead of only the last.
+
+## No Instance Sandboxing
+
+Here's another two mods. What do you expect to happen?
+
+```mini
+[general]
+mod_enabled = 1
+[meta_info]
+mod_0 = name.ini
+mod_1 = float.ini
+```
+
+<CodeTable
+  languages={['mini', 'mini']}
+  labels={['name.ini', 'float.ini']}
+  entries={[
+    [
+      "[object_list]\ncontroller = enabled\ninstance = enabled\n[controller_events]\nroom_start='let inst = instance_create_depth(0,0,10, omod_instance); inst.name = \"Fern\"'\n[instance_events]\ndraw_gui_end='draw_text(self.name, 0, 0)'",
+      "[object_list]\ncontroller = enabled\ninstance = enabled\n[controller_events]\nstep='let inst = instance_create_depth(100,0,10, omod_instance); inst.vsp = 2'\n[instance_events]\nstep='self.y += self.vsp; self.vsp *= 0.5; if self.vsp < 0.1 { instance_destroy(self) }",
+    ],
+  ]}
+/>
+
+You might expect that each mod would act independently; `name.ini` would show "Fern" in the top left corner, and `float.ini` would create a bunch of Instances that slowly float downwards. Instead, you get a runtime error.
+
+Rusted Moss doesn't differentiate between Instances created by different mods, which means every `instance` Instance runs the exact same code. This can cause errors, since you can't predict what other mods will do with their Instances. Sadly, truly fixing this problem is impossible because of [boring technical reasons](/rm-docs/modding/limitations#game-object-sadness) since it would involve creating new Game Objects (add adding code to their Events) at runtime, which GameMaker doesn't support.
+
+RMML half solves this issue by attaching a `mod_name` field to all Instances, and only running modded code if the `mod_name` on the Instance matches the `mod_name` of the mod. This sandboxes each Instance, ensuring that Event code only runs on Instances that are expecting it.
+
+Of course, this isn't a flawless system. Using `instance_change` to turn a normal Instance into a moddable Instance won't apply the `mod_name` field, causing it to run no Event code. `with` blocks and `instance_find` (and similar) can't read Instance variables, so each Instance must be checked individually.
+
+```sp
+with omod_instance {
+  -- `rmml.current_mod` tracks the current mod, so this filters out any Instances that weren't created by this mod
+  if self.mod_name != global.rmml.current_mod {
+    continue
+  }
+  ...
+}
+```
+
+This issue is the core reason why I felt Rusted Moss Mod Loader needed to go from a private script to a public tool other humans can use. This effectively means that **_only one mod_** can be loaded at once, which greatly limits what you can do with mods.
+
+# Syntax
+
+RMML reads mods from `.md` files, which are text files (like `.ini` files). The syntax is a simplified version of [Markdown](https://en.wikipedia.org/wiki/Markdown), with each code fence interpreted as Catspeak code and H1 and H2 headers used to specify Game Object and Event names. Here's a comparison of the syntax.
+
+<CodeTable
+  caption="INI Mod VS RMML Mod"
+  languages={['mini', 'rmml']}
+  entries={[
+    [
+      "[object_list]\ncontroller = enabled\ninstance = enabled\n[controller_events]\ncreate='show_message(\"Foo\")'\nroom_start='show_message(\"Bar\")'\n[instance_events]\ncreate='self.y += self.vsp; self.vsp *= 0.5; if self.vsp < 0.1 { instance_destroy(self) }'",
+      '# controller\n## create\n```\nshow_message("Foo")\n```\n\n## room_start\n```\nshow_message("Bar")\n```\n\n# instance\n## create\n```\nself.y += self.vsp\nself.vsp *= 0.5\nif self.vsp < 0.1 { instance_destroy(self)\n}\n```',
+    ],
+  ]}
+/>
+
+The first thing is the lack of an `[object_list]` header. Instead of having to list each Game Object separately, if a header exists, then it is implied to be enabled. Game Object headers (`[controller_events]`) turn into H1 headings with a single `#` and lose the `_events` suffix (`# controller`). Event names go from keys to H2 Headings with two `##` (`## create`).
+
+Event code for an Event goes between sets of three backticks ` ``` ` at the start of a line and is interpreted as Catspeak code. These code fences can include line breaks, comments, and both types of quotes. Additionally, syntax errors including line numbers point to a proper line number; an error on line 4 will say line 4 instead of line 1.
+
+All other characters in a RMML file are ignored and can be used for comments.
+
+# Modlist
+
+RMML completely bypasses Rusted Moss's mod loading when loading other mods, and doesn't read the modlist in `meta_info.ini`. Instead, the file `modlist.txt` in the `rmml` directory stores a list of mods to load.
+
+```
+# put your mods here (or disable them with #)
+# mods are loaded (and run) in the order written here
+rmml_modlister.md
+ccw_shark.md
+cc_shark.md
+
+my_mod_here.md
+my_other_mod.ini
+your_mod_folder/mod_name.md
+```
+
+# Differences
+
+For most use cases, RMML is an otherwise invisible middleman that sits between your mod's code and Rusted Moss. However, there are a things to keep in mind when using RMML.
+
+## `controller`
+
+Rusted Moss Mod Loader doesn't create additional `controller` Instances, or perform Instance sandboxing on them. Using Alarms, changing its depth, or creating additional `controller` Instances can lead to undesirable side effects. Using Instance variables is allowed, but can be overwritten by other mods. This behavior might change in a future release of RMML.
+
+## `global.rmml.current_mod` and `self.mod_name`
+
+RMML tracks the currently running mod with the `global.rmml.current_mod` variable. In most cases, this is the filename of your mod, without the file extension. `self.mod_name` is an Instance variable automatically attached to all moddable Instances (except `controllers`). If you are accessing all moddable Instance, such as through a `with` block or `instance_find`, you will need to compare the Instance's `self.mod_name` to `global.rmml.current_mod` to filter out Instances from other mods.
+
+```sp
+with omod_instance {
+  if self.mod_name != global.rmml.current_mod {
+    continue
+  }
+  ...
+}
+```
+
+You can exploit this behavior to create Instances for other mods. Setting the `mod_name` of an Instance will "donate" it to another mod, and RMML will start running that mod's code on it. This is also required when using `instance_change` to change a non-moddable Instance into a moddable Instance.
+
+```sp
+with oplayer {
+  instance_change(omod_player, false)
+  self.mod_name = global.rmml.current_mod
+}
+```
+
+# History
+
+When I first started work on what would become RMML, I didn't anticipate it being this large of a project. I want to talk a little bit about the history and future of RMML, because this is the kind of thing I find interesting.
+
+RMML version zero was a [Jupyter notebook](https://jupyter.org/) that self-referenced its own Markdown blocks as RMML syntax, outputting a reformated `.ini` mod that removed all the line breaks. Markdown is almost perfect for this purpose, as a mix of visually-distinct markup (`#` headings) and code (` ``` `) sections. A Python script in the notebook could easily read the Markdown blocks and convert them into something Rusted Moss can read directly. Despite being literally the first thing I thought of, Markdown's syntax has served well and I would use the same syntax again if I could start from scratch.
+
+Initially, this arrangement seemed ok. The 4000 character limit still existed, but that's a lot of code to write before it's an issue. However, as stated, there are two [bigger](#one-function-per-event) [issues](#no-instance-sandboxing). These are both unsolvable with a simple `md` to `ini` converter, and need something more powerful. More aware of how Rusted Moss actually loads code.
+
+The first versions of RMML are (probably) lost to time, but the core has remained the same. Instead of Rusted Moss calling your mod's code directly, it calls RMML's code, which then performs its intermediate logic before calling your mod's code. Naturally, there's a lot of hidden complexity there and a lot of weird scoping issues that needed to be ironed out.
+
+I've also referenced a few minor issues that were resolved. The first was a lack of syntax highlighting, which is basically a personal issue. RMML is (barely) capable of converting Javascript code fences (` ```js `) into Catspeak using basic string replacement, which I abused for syntax highlighting before abandoning it in favor of a real Catspeak syntax highlighter using TextMate grammars (after wasting too long trying to figure out why `function` in a string was replaced with `fun`). This is probably going to be cut in a future release, since it hurts mod loading performance and adds unnecessary complexity.
+
+Another minor issue had to do with sharing mods. In earlier versions of Rusted Moss, you needed to manage the other `.ini` files in the `mods` folder, adding function and asset names to the lists so Catspeak can expose them. This causes issues, since there isn't an easy way to distribute these without overwriting other mods. RMML solved this by reading a special header in the `.md` file and exposing them using Catspeak's API. In the latest versions, this is unnecessary. The Rusted Moss devs enabled the super secret setting which exposes everything, which also makes managing these files unnecessary.
+
+So what's next? RMML is surprisingly simple in its execution. It is solely concerned with loading mods and ensuring all [three](#why) major issues are resolved to the best of its ability, while minimizing the performance overhead. RMML is also reaching the limitations of its architecture, and deserves a proper redesign using my updated knowledge. A future version will likely include a better user interface, probably as an additional mod, and feature improvements to every part of the process.
+
+When modding support was initially announced, there was some discussion from the developers about switching away from `.ini` files towards something easier to work with. It has been long enough since the last update on this for me to say that I don't think it's coming. I don't know if this is because RMML exists and solves these issues, or if it's because there are less than 10 people who have attempted modding the game and valuable developer time is better allocated, or some mystery third option, but regardless I will continue to maintain this project into the indeterminate future.

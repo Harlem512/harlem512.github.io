@@ -1,0 +1,130 @@
+---
+title: 'Mod Loading'
+desc: 'Technical details on how Rusted Moss implements modding support.'
+order: 0
+---
+
+# From Text to Events
+
+Disappointingly, GameMaker and Catspeak can't turn a text file directly into Event code. Instead, we must use the power of code to do what we want. Thankfully, Catspeak does the [hard part](#catspeak-codegen) of turning text into code, all we need to do is run that code when we want.
+
+Modded code gets loaded by the `omod_meta` Game Object, during its `create` Event. The code gets stored in a `ds_map` named `global.mod_map`, which maps an internal Event name to a Catspeak function. Modded Game Objects look at `global.mod_map` and call the function stored for that Event's key.
+
+# Calling an Event
+
+The following is the entire Event code, annotated and [fixed(/rm-docs/modding/limitations#decompilation), for the `omod_controller` `create` Event.
+
+```gml
+// gml_Object_omod_controller_Create_0
+// check if the function exists
+if ds_map_exists(global.mod_map, "controller_events_create")
+{
+  // ensure `self` gets set to this Game Object
+  ds_map_find_value(global.mod_map, "controller_events_create").setSelf(self)
+  // call the stored function
+  ds_map_find_value(global.mod_map, "controller_events_create")()
+}
+```
+
+`setSelf` is a Catspeak function that sets the `self` inside the function to what you specify. You'll also notice it's reading from a concatenated key based on the Game Object's name and the Event.
+
+# `omod_meta`
+
+Here's a shortened and annotated version of the code that loads mods into `global.mod_map`. See the [Quickstart](/rm-docs/intro/quickstart#meta_infoini) for information on what the referenced `meta_info.ini` and mod `.ini` files look like.
+
+First up is some initialization code.
+
+```gml
+// gml_Object_omod_meta_Create_0
+// clear `mod_map`
+global.mod_map = ds_map_create()
+...
+// the list of mods to load
+file_list = -1
+```
+
+Next, we build the internal mod list. Note that it finds mods based on string concatenation and exact keys. If you have three mods, `mod_0`, `mod_2`, and `mod_3`, only `mod_0` will be loaded, since `mod_1` doesn't exist.
+
+```gml
+// gml_Object_omod_meta_Create_0
+// open `meta_info` file
+ini_open("mods/meta_info.ini")
+i = 0
+while (ini_read_string("meta_info", ("mod_" + string(i)), "") != "")
+{
+  // read mods from mod list
+  file_list[i] = ini_read_string("meta_info", ("mod_" + string(i)), "")
+  i++
+}
+ini_close()
+// if no mods, stop loading
+if (file_list == -1)
+  return;
+```
+
+The next block actually does the mod loading. For each mod in the mod list, we open the `ini` file and start reading. We first check that a Game Object is `enabled` on line 6, then make sure that it has Event code on line 9 before being parsed on line 11.
+
+Line 9 (and the loading code) is duplicated for all 21 Events, and the entire section starting on line 6 is duplicated for all 6 Game Objects.
+
+```gml {7,10,12}
+// gml_Object_omod_meta_Create_0
+// for each mod in mod list, ...
+for (i = 0; i < array_length(file_list); i++)
+{
+  ini_open("mods/" + file_list[i])
+  // if that mod has a Game Object enabled, ...
+  if (ini_read_string("object_list", "controller", "") == "enabled")
+  {
+    // and if it has a key for an Event, ...
+    if (ini_read_string("controller_events", "create", "") != "")
+      // then add the parsed Catspeak code to `global.mod_map`
+      ds_map_set(global.mod_map, "controller_events_create",
+          global.__catspeak__.compileGML(
+            global.__catspeak__.parseString(
+              ini_read_string("controller_events", "create", "")
+            )
+          )
+        )
+    ...
+  }
+  ...
+  ini_close()
+}
+```
+
+# `global.mod_map`
+
+As shown, `global.mod_map` is the main data structure that relates Event names to Catspeak function calls. As a `ds_map`, you need to use `ds_map` functions instead of simple `[ ]` syntax (and it's [actually a number](/rm-docs/gml/ids)). The keys for this map are a concatenated string based on the [Game Object name](/rm-docs/gml/objects) and [Event name](/rm-docs/gml/events).
+
+| Map Key                         | Description                          | Example                        |
+| ------------------------------- | ------------------------------------ | ------------------------------ |
+| `{OBJECT}_events_{EVENT}`       | Normal map key for most Events       | `controller_events_create`     |
+| `{OBJECT}_events_other_{EVENT}` | Map key for `room` and `user` Events | `instance_events_other_user_1` |
+
+If you're paying attention, you might notice a few issues. We can only store one function per Event, there isn't any sandboxing for Instances (so different mods' code can run on the same Game Object), and code must be one line, since `.ini` files don't support multi-line strings. These are [limitations](/rm-docs/modding/rmml#why) that we must work around, by using [your own code](#catspeak-codegen) or [Rusted Moss Mod Loader](/rm-docs/modding/rmml).
+
+# Catspeak Codegen
+
+I want to briefly talk about how to load your own Catspeak code. For more in-depth information, check out Catspeak's [offical docs](https://www.katsaii.com/catspeak-lang/3.1.2/hom-catspeak-for-developers.html).
+
+Catspeak code generation happens in two steps. Parsing takes in a buffer (`parse`) or a string (`parseString`) and outputs an intermediate data structure. The second step, compilation (`compile`), takes the resulting intermediate structure and outputs a GML function we can store and call later. `compileGML` can also be used, but is deprecated as of Catspeak 3.0.2.
+
+```sp
+-- our source code
+let str = "!\"Hello World\""
+let hir = global.__catspeak__.parseString(str)
+let function = global.__catspeak__.compile(hir)
+-- call our function
+function()
+```
+
+Once we have a function, we can store it in `global.mod_map` and have Rusted Moss run it automatically, or store it some other structure for later use. `omod_meta` also provides with us a simple function (`compile_mod_event`) that takes an input file and fully compiles it for us.
+
+```sp
+-- load our code from a text file
+let function = compile_mod_event("mods/codeFile.txt")
+-- attach the function to the `controller`'s `create` Event
+ds_map_set(global.mod_map, "controller_events_create", function)
+```
+
+Using this technology, we are no longer limited by Rusted Moss's mod loading and can substitute our [own mod loader](/rm-docs/modding/rmml). On thing to keep in mind is that Catspeak takes a long time to fully compile code, long enough that you can easily start running into the 1000ms limitation or cause noticeable slow-downs.

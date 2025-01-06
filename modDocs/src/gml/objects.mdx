@@ -1,0 +1,107 @@
+---
+title: 'Moddable Game Objects'
+desc: 'All 6 moddable Game Objects and what they do'
+order: 1
+---
+
+# Game Object Table
+
+Rusted Moss provides six Game Objects that we can write Event code for. The following table can be used for quick reference. `Name` is used for object headers (`[{NAME}_events]` and `# {NAME}`) while `GML Name` is the GML Game Object name (for `instance_create_depth`, `with`, etc). `Parent` is the GML parent Game Object.
+
+| GML Name          | Name         | Parent       | Notes                                            |
+| ----------------- | ------------ | ------------ | ------------------------------------------------ |
+| `omod_basic`      | `basic`      | `par_basic`  |                                                  |
+| `omod_controller` | `controller` | -            | Created at game start, doesn't pause, persistent |
+| `omod_enemy`      | `enemy`      | `par_enemy`  | Has HP, can be grappled to                       |
+| `omod_hitbox`     | `hitbox`     | `par_hitbox` |                                                  |
+| `omod_instance`   | `instance`   | -            | Doesn't pause (they lied)                        |
+| `omod_player`     | `player`     | `oplayer`    | Hard limit of one `oplayer`, not persistent      |
+
+95% of modded code can exist with just `controller` and `instance` Instances, and I recommend avoiding the rest unless absolutely necessary.
+
+# Inheritance
+
+Most Rusted Moss Game Objects inherit from something on this short inheritance tree. The arrows point from a Game Object to its parent.
+
+```
+par_game  < par_hitbox
+   ^
+par_draw
+   ^
+par_basic < oplayer
+   ^
+par_enemy
+```
+
+`par_game` is the simplest Game Object that pauses and does almost nothing else. `par_draw` calls `draw_self` in its `draw` Event, and similarly does little else. The other Game Objects here have moddable versions and are discussed in their sections.
+
+# `event_inherited`
+
+The Game Objects with parents don't run their parent's code automatically. This will lead to weird crashes, as unrelated Game Objects attempt to do stuff with Instance variables that were never initialized. This table is every Event you should add an `event_inherited()` call in.
+
+| Game Object | Events                                                                                                      |
+| ----------- | ----------------------------------------------------------------------------------------------------------- |
+| `basic`     | `create`, `step`, `draw`                                                                                    |
+| `enemy`     | `create`, `destroy`, `step`, `draw`, `draw_end`, `alarm_0`, `user_0`, `user_1`                              |
+| `hitbox`    | `create`, `destroy`, `step`, `draw`, `alarm_0`, `alarm_1`\*, `user_0`, `user_1`, `animation_end`, `cleanup` |
+| `player`    | `create`, `step`, `step_end`, `draw`, `draw_end`, `draw_gui_end`, `alarm_0`, `animation_end`, `cleanup`     |
+
+The `hitbox` `alarm_1` Event probably [crashes](/rm-docs/modding/limitations#one-thousand-milliseconds) Catspeak, since it's the code that implements hitlag. Maybe don't use `event_inherited` on that one.
+
+# `basic`
+
+`basic` is a child of `par_basic`, which is the simplest Game Object that pauses. Naturally, it's still quite complicated, performing tilemap collision resolution and simple rendering. Most things that collide with walls and feature gravity are descendants of `par_basic`.
+
+# `controller`
+
+This is the most important Game Object, and is the only one Rusted Moss makes for you. Any other Instances you want created must be made in a `controller`'s Event code. Like all other Instances, it gets destroyed when you go back to the main menu.
+
+You should use a `controller` for any logic that doesn't need to abuse [Event ordering](/rm-docs/gml/events#execution-order), or needs to be a parent of another Game Object.
+
+# `enemy`
+
+Rusted Moss has a lot of Enemies, most of which extend from `par_enemy`. Notably, this Game Object tracks a `self.hp` Instance variable and destroys itself when that value reaches zero. Enemies can also be grappled to, which can be useful.
+
+# `hitbox`
+
+`par_hitbox` is mostly used for bullets and other projectiles that need to interact with the game's tile system. The `par_` prefix is somewhat misleading, `par_hitbox` is a parent for only two Game Objects; instead, `par_hitbox` is created directly. There is a lot of code encased in this Game Object, most of which only applies conditionally depending on initial state.
+
+# `instance`
+
+A big motivation for why I'm writing this is the `instance` Game Object. The official patch notes for the modding support call `instance` a "a basic object that pauses when the game pauses." In reality, `instance` Game Objects don't pause, probably because their parent was never set to `par_game`. For most purposes, this doesn't matter. If all you want is an Instance that pauses, there are [alternatives](/rm-docs/mose/misc#pausing).
+
+`instance` Instances are very useful for [modifying](/rm-docs/modding/existing) existing Event code by abusing [execution order](/rm-docs/gml/events#execution-order) or other techniques. Any code that needs to be run at a specific time within an Event
+
+# `player`
+
+`oplayer` is Rusted Moss's main Player Game Object, and manages the Player's position and handles rendering. The Player Game Object is deeply entwined with Rusted Moss's core logic and messing with it can have weird side effects. If you must use `player`, I recommend using `instance_change` to change the Instance into an `oplayer` and back again before calling `event_inherited`.
+
+```sp
+instance_change(oplayer, false)
+event_inherited()
+instance_change(omod_player, false)
+```
+
+Unless you want to completely replace Player logic, I recommend just using a `with` block in a `controller` Instance.
+
+```sp
+with oplayer {
+  -- player code here
+}
+```
+
+## `self`
+
+When using `INI` mods with the `player` Game Object, `self` is not set. If you want access to the Player Instance, you must wrap your Event code in a `with` statement, or use `instance_find`.
+
+```sp {2,5,8}
+self.x  -- invalid
+with oplayer {
+  self.x  -- correct
+}
+with omod_player {
+  self.x  -- correct, only gets modded players
+}
+let plr = instance_find(oplayer, 0)
+plr.x  -- correct, doesn't set `self`
+```

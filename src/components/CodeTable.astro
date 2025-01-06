@@ -1,0 +1,65 @@
+---
+import { languageNames, type CodeLanguage } from '@/code/highlighter'
+import CodeFix from './CodeFix.astro'
+
+interface Props {
+  caption?: string
+  languages: (CodeLanguage | undefined)[]
+  labels?: (string | undefined)[]
+  entries: string[][]
+}
+
+const { caption, languages, labels, entries } = Astro.props
+
+const numColumns = Math.max(
+  languages.length,
+  labels?.length ?? 0,
+  ...entries.map((data) => data.length),
+)
+
+const columnLabels: {
+  label: string
+  lang: CodeLanguage | undefined
+}[] = []
+for (let index = 0; index < numColumns; index += 1) {
+  const language = languages[index]
+
+  const realLabel =
+    labels?.[index] ?? (language ? languageNames[language] : 'Description')
+
+  columnLabels.push({
+    label: realLabel,
+    lang: language,
+  })
+}
+---
+
+<table>
+  {caption && <caption>{caption}</caption>}
+  <thead>
+    <tr>
+      {columnLabels.map(({ label }) => <th>{label}</th>)}
+    </tr>
+  </thead>
+  <tbody>
+    {
+      entries.map((entry) => (
+        <tr>
+          {columnLabels.map(({ lang }, column) => (
+            <td>
+              {lang ? (
+                <CodeFix
+                  code={entry[column] ?? ''}
+                  lang={lang}
+                  inline={!entry[column]?.includes('\n')}
+                />
+              ) : (
+                entry[column]
+              )}
+            </td>
+          ))}
+        </tr>
+      ))
+    }
+  </tbody>
+</table>

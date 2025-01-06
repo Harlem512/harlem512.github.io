@@ -1,0 +1,82 @@
+---
+title: 'Quickstart'
+desc: 'The minimum amount of information to get started with Rusted Moss modding.'
+order: 0
+---
+
+# Prerequisites
+
+1. _This isn't a programming tutorial_. I'm going to keep the jargon to a minimum, but I'm not going to explain how loops work, or what a string is, or how functions work.
+1. _This isn't a GML tutorial_. If you've never used a modern game engine before, you'll want to read over the [official manual](https://manual.gamemaker.io/lts/en) (or my [shorthand](/rm-docs/gml/architecture)) before continuing.
+1. _You want a code editor_. My (completely unbiased) suggestion is [Visual Studio Code](https://code.visualstudio.com/), but just use your favorite. There are also [other tools](/rm-docs/intro/tools) you might find useful.
+
+# What does it do?
+
+Rusted Moss exposes [six](/rm-docs/gml/objects) Game Objects we can write [unrestricted\*](/rm-docs/modding/limitations) GameMaker [Event](/rm-docs/gml/events) code for. This means we can do (almost) anything we want, including completely replacing all of Rusted Moss's code (!!!). However, most of this documentation will explain how to stay within the bounds of the game's systems.
+
+# Where are my Files?
+
+Mods live in Rusted Moss's Steam directory, `Steam/steamapps/common/Mose`. You can easily find this by right-clicking on the game and clicking "Browse local files".
+
+![Browse Local Files](/docs/browseLocalFiles.png)
+
+In that folder, you'll find the `data.win` file (for [Undertale Mod Tool](rm-docs/modding/utmt)), but we're mainly after the `mods` folder. Inside, we'll find the mod configuration file `meta_info.ini` and the example mod `sniper_bnuy.ini`.
+
+# `meta_info.ini`
+
+```mini
+[general]
+mod_enabled = 0
+[meta_info]
+mod_0 = sniper_bnuy.ini
+```
+
+- `[general]`: This is a header (denoted by brackets `[ ]` ), and describes what the next section is doing. In this case, it's mod settings.
+- `mod_enabled = 0`: This is a key-value pair and determines if modding is enabled. _Setting this to `1` will enable modding_.
+- `[meta_info]`: This is also a header, and is where we tell Rusted Moss what mods we have and where they are.
+- `mod_0 = sniper_bnuy.ini`: This key-value pair tells us we have a mod called `sniper_bnuy.ini` that we want to run.
+
+Any mods you want to load should be placed under the `[meta_info]` header and _must_ have indexes in order.
+
+```mini
+[general]
+mod_enabled = 1
+[meta_info]
+mod_0 = my_mod.ini
+mod_1 = myOtherMod.ini
+mod_2 = "With spaces.ini"
+mod_4 = NotLoaded.ini
+```
+
+Because of [boring technical reasons](/rm-docs/modding/rmml#no-instance-sandboxing), you should only use one mod (`mod_0`) at a time. Each mod name references a `.ini` file in the `Mods` directory, so let's look at `sniper_bnuy.ini` for what they look like.
+
+# `sniper_bnuy.ini`
+
+```mini
+[object_list]
+controller = enabled
+instance = enabled
+
+[controller_events]
+room_start = "i = 0; while ..."
+
+[instance_events]
+create = "self.parent ..."
+draw = "if ..."
+step = "if ..."
+```
+
+- `[object_list]`: This header lists which [Game Objects](/rm-docs/gml/objects) we want to write code for.
+- `{OBJECT} = enabled`: If an object isn't listed as `{OBJECT_NAME} = enabled`, then its Event code won't be loaded. Rusted Moss looks for `enabled` exactly, not a truthy value.
+- `[{OBJECT}_events]`: The key-value pairs after this header are associated with the [Game Object](/rm-docs/gml/objects) in the header.
+- `{EVENT} = {SOME_CODE}`: The value `{SOME_CODE}` is interpreted as _one line_ of [Catspeak](/rm-docs/intro/language) code for the [Event](/rm-docs/gml/events) listed as the key. I recommend using single quotes `'` to wrap your Event code so you can use double quotes `"` for strings.
+
+If you want a more in-depth breakdown of this mod, check out the [Example Mod](/rm-docs/intro/bnuy) page.
+
+# Final Notes
+
+Modded Event code is run immediately when the Event for a particular Instance fires, and modded Game Objects don't implement any other behavior on their own. This means calling `event_inherited()` on your own.
+
+`controller` is a non-pausing, persistent Game Object that is created when the menu loads, and is destroyed when you return to the menu. Most of your code can live in this object, with other Instances accessed with clever `with` blocks.
+
+If you're doing serious modding work, I recommend [bypassing](/rm-docs/mose/mods#globalmod_map) the normal mod loading process using [Rusted Moss Mod Loader](/rm-docs/modding/rmml) or your own mod loader.

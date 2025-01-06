@@ -1,0 +1,44 @@
+---
+type ProjectLink =
+  | {
+      page: string
+      image: string
+      imageAlt: string
+      text?: never
+    }
+  | {
+      page: string
+      text: string
+      image?: never
+      imageAlt?: never
+    }
+
+interface Props {
+  title: string
+  demo: string
+  links: ProjectLink[]
+  description?: string
+}
+
+const { title, demo, links, description } = Astro.props
+---
+
+<aside style={{ textAlign: 'center' }}>
+  <h2>
+    <a href={demo}>{title}</a>
+  </h2>
+  <p>{description}</p>
+  {
+    links.map(({ page, ...link }) =>
+      link.image ? (
+        <a href={page}>
+          <img src={link.image} alt={link.imageAlt} />
+        </a>
+      ) : (
+        <p>
+          <a href={page}>{link.text}</a>
+        </p>
+      ),
+    )
+  }
+</aside>

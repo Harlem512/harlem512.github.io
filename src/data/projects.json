@@ -1,15 +1,27 @@
 [
   {
     "title": "Rusted Moss Interactive Map",
+    "demo": "/rm-map.html",
     "links": [
       {
         "page": "/rm-map.html",
-        "image": "https://raw.githubusercontent.com/Harlem512/rm-map/refs/heads/main/tiles/1/0/0.png",
+        "image": "rm-map.png",
         "imageAlt": "(map preview)"
       },
       {
         "page": "https://github.com/Harlem512/rm-map",
         "text": "Tiles Source"
+      }
+    ]
+  },
+  {
+    "title": "Rusted Moss Modding Documentation",
+    "demo": "/rm-docs",
+    "description": "A documentation site for modding Rusted Moss. Includes modding tools, reference material, source code explanations, and plenty of examples.",
+    "links": [
+      {
+        "page": "/rm-docs/intro/docs#contribute",
+        "text": "Contribute"
       }
     ]
   }

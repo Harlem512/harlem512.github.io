@@ -1,0 +1,30 @@
+---
+import { sortedArticles, getArticlesForTopic } from '@/code/docsCollection'
+import ModDocs from '@/layouts/ModDocs.astro'
+
+export async function getStaticPaths() {
+  return sortedArticles.map(({ topic }) => ({
+    params: { topic: topic.id },
+    props: topic.data,
+  }))
+}
+
+const { topic } = Astro.params
+const { desc, title } = Astro.props
+const articles = getArticlesForTopic(topic)
+---
+
+<ModDocs title={title} desc={desc} sidebarProps={{ article: topic }}>
+  <section>
+    {
+      articles.map(({ id, data }) => (
+        <aside>
+          <a href={`/rm-docs/${id}`}>
+            <h1>{data.title}</h1>
+          </a>
+          <aside>{data.desc}</aside>
+        </aside>
+      ))
+    }
+  </section>
+</ModDocs>

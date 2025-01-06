@@ -1,0 +1,44 @@
+---
+title: 'Debugging, Pitfalls, and Errors'
+desc: 'Diagnosing and logging errors and other information.'
+order: 4
+---
+
+# Using the `controller` `create` Event for Evil
+
+This mod has an issue. Can you spot it?
+
+````rmml
+# controller
+
+## create
+```
+let inst = instance_create_depth(0,0, 0, omod_instance)
+inst.persistent = true
+```
+
+# instance
+
+## create
+```sp
+self.name = "Fern"
+```
+
+## step
+```sp
+-- should print "Fern", but it doesn't do anything ???
+show_message(self.name)
+```
+````
+
+Here's the issue.
+
+```rmml {3}
+# controller
+
+## create
+
+...
+```
+
+If you make Instances during a `controller`'s `create` Event, the `instance` `create` Event fails to run. To get around this, you can set an Alarm for one frame later, or use the `room_start` Event instead.

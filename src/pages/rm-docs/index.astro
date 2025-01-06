@@ -1,0 +1,49 @@
+---
+import LinkList from '@/components/LinkList.astro'
+import ModDocs from '@/layouts/ModDocs.astro'
+---
+
+<ModDocs title="RM Mod Docs" desc="Rusted Moss Modding documentation">
+  <section>
+    <aside>
+      <a href="/rm-docs/intro/install">
+        <section>
+          <h2>Play with mods</h2>
+          <img src="/docs/galsThumbnail.png" alt="Palette Gals" />
+        </section>
+      </a>
+    </aside>
+    <aside>
+      <a href="/rm-docs/intro/quickstart">
+        <section>
+          <h2>Make mods</h2>
+          <img src="/docs/code.png" alt="Source code" />
+        </section>
+      </a>
+    </aside>
+  </section>
+  <section>
+    <aside>
+      <h2>Quick Access Links</h2>
+      <LinkList
+        links={[
+          [
+            'Undertale Mod Tool',
+            'https://github.com/UnderminersTeam/UndertaleModTool',
+          ],
+          ['GameMaker LTS Manual', 'https://manual.gamemaker.io/lts/en'],
+          ['Catspeak Docs', 'https://www.katsaii.com/catspeak-lang/'],
+          [
+            'GML Function List',
+            'https://github.com/katsaii/catspeak-lang/blob/main/src-lts/scripts/__scr_catspeak_gml_interface/__scr_catspeak_gml_interface.gml',
+          ],
+          ['Official Discord', 'https://www.rustedmossgame.com'],
+          [
+            'Docs Repository',
+            'https://github.com/Harlem512/harlem512.github.io/tree/main/modDocs',
+          ],
+        ]}
+      />
+    </aside>
+  </section>
+</ModDocs>

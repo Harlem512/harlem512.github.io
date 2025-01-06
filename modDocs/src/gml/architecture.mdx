@@ -1,0 +1,70 @@
+---
+title: 'Engine Architecture'
+desc: "Simplified explanation of GameMaker's engine"
+order: 0
+---
+
+# Engine Overview
+
+GameMaker is event-driven and object-oriented; code exists as [Events](#events), which operate on [Instances](#instances) as defined by their [Game Object](#game-objects). If you're familiar with object-oriented programming, then this will sound familiar: Game Objects are classes, Instances are objects, and Events are special class methods called by the GameMaker engine.
+
+# Game Objects
+
+Game Objects define structure and relationships. They determine what Events are registered and initial Instance variables. Similar "things" can be grouped together for easier code reuse and extension. You can call parent Events using `event_inherited()` and find the parent using `object_get_parent(o)`.
+
+For example, all pickups share a common parent, `par_pickup`. Instead of checking for each pickup type individually, we just check for the parent.
+
+```gml {6}
+// gml_Object_oplayer_Step_2.gml
+...
+if global.trinket_active_[5]
+{
+  var do_fx_ = false
+  if instance_exists(par_pickup)
+    do_fx_ = true
+  ...
+}
+...
+```
+
+Rusted Moss provides [six](/rm-docs/gml/objects) Game Objects we can easily write Event code for. Our ability to manipulate Game Objects is limited by [boring technical reasons](/rm-docs/modding/limitations#game-object-sadness).
+
+# Instances
+
+Instances are mindless data. They're assigned a Game Object (using `object_index`), which determines their behavior; every Instance of a Game Object runs the same Events. Instances are usually made using `instance_create_depth(...)`. Most Instances are destroyed when a new [Room](#rooms) is loaded, however the `persistent` variable overrides this behavior.
+
+```catspeak
+let inst = instance_create_depth(10, 10, 0, omod_instance)
+-- `sprite_index` is managed by the engine
+inst.sprite_index = splayer_offscreen
+-- setting a custom Instance variable
+inst.name = "Fern"
+```
+
+Some Instance variables are [managed by the engine](https://manual.gamemaker.io/lts/en/GameMaker_Language/GML_Reference/Asset_Management/Instances/Instance_Variables/Instance_Variables.htm) for various functions.
+
+# Events
+
+Events are code, and implement behavior. Most Events happen each frame, in a [specific order](/rm-docs/gml/events#execution-order), but some are called depending on certain conditions, like when a Room is entered or when an Instance is created. Events can be called using the [`event_perform(...)`](https://manual.gamemaker.io/lts/en/GameMaker_Language/GML_Reference/Asset_Management/Objects/Object_Events/event_perform.htm).
+
+```mini
+[instance_events]
+# `create` event, set name
+create = 'self.name = "Maya"'
+# `draw` event, draw our name each frame
+draw = 'draw_text(0, 0, self.name)'
+```
+
+We can only write code for [twenty-five](/rm-docs/gml/events) Events, however most of the classics are moddable. You can check the [official documentation](https://manual.gamemaker.io/lts/en/The_Asset_Editors/Object_Properties/Object_Events.htm) for a full list of all Events.
+
+# Rooms
+
+Rooms are collections of Instances, tile map data, and other data. The game is always operating with a loaded Room. Everything that happens inside a Room is isolated and non-persistent, meaning anything that happens to a Room or inside a Room is lost when the Room is unloaded (unless explicitly saved).
+
+In Rusted Moss, most of the time the screen fades to black the current Room is being unloaded and a new Room is being loaded. We also get a visual example of Room behavior: every time the same Room is loaded, enemies are in the same place, tiles are in the same place, money on the ground is gone, etc. If you want persistent Room data, you can use the `room_start` Event with conditional logic based on global variables.
+
+We have a lot of tools to manipulate Rooms through modding, from `room_add(...)` to `room_assign(...)`. Because of [boring technical reasons](/rm-docs/mose/rooms) we can't just use `room_goto(...)` to load Rusted Moss's Rooms.
+
+# Sprites
+
+Sprites are images, and are used to render most things to the screen. Anything that isn't extremely fluidly animated is probably a Sprite. GameMaker gives us a lot of control for manipulated Sprites, however there are [performance issues](/rm-docs/modding/limitations#sprites) if you load too many new sprites.

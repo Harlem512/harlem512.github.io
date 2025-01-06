@@ -1,0 +1,79 @@
+---
+title: 'Understanding the Docs'
+desc: 'Information about the structure of the documentation and style guides.'
+order: 5
+---
+
+# Who does this guy think he is?
+
+I'm not a GameMaker programmer, actually. I know a lot about software development and have learned a lot about GameMaker by modding Rusted Moss, but I'm far from an expert. GameMaker is very beginner-focused, which is good for people who want to learn programming, but really bad for someone trying to figure out advanced engine behavior.
+
+If something in the docs is wrong, please let me know so I can fix it and educate myself. Or [fix it yourself](#contribute).
+
+# Usage
+
+There are four topics. The `Index` pages give an overview of each article in a topic. When an article is opened, its headings appear as numbers in the navigation sidebar, and can be clicked to jump around. Links in an article are highlighted in [red](#usage) and always open in the same tab (you can control+click to open in a new tab). An [arrow](/rm-docs) signifies a docs link, and the [link icon](https://github.com/Harlem512/harlem512.github.io) signifies an external link.
+
+The `Single-Page` link combines every article into one large page, for easier searching. If you want to find something specific, the `Single-Page` view can be faster than checking each article individually.
+
+Certain GameMaker keywords are Capitalized, such as Game Object, Instance, Event, Sprite, and Room. This is done to differentiate between Instances, the GameMaker data structure, and `instance`, the moddable Game Object (`omod_instance`) referenced as `instance` in mod files. When "Player" is used by the docs, it refers specifically to `oplayer`, the Rusted Moss Game Object, not to be confused with `player`, the moddable `omod_player` Game Object. It also helps clarify the difference between Game Objects, the GameMaker object-oriented programming class equivalent, and objects, an object-oriented programming structure similar to Instances.
+
+# Code Blocks
+
+Inline `code blocks` are used for code-like segments, such as `literal text`, `files.md`, and `code = Examples()`. Brackets (`{ }`) in a code block are sometimes used as placeholders, such as `create = '{CODE_HERE}'` and always use `MACRO_CASE`. Larger code blocks use [syntax highlighting](#highlighting) and include the language name and line numbers:
+
+```sp
+-- A Catspeak code block, the language of modding
+let foo = 0
+```
+
+```gml
+// A GameMaker Language code block, the language of source code
+var foo = 0
+```
+
+```mini
+# A `.ini` file used for Rusted Moss configuration or modding
+# Event code is highlighted as Catspeak
+code = 'let foo = 0'
+```
+
+````rmml
+A `.md` file used by Rusted Moss Mod Loader
+Event code is highlighted as Catspeak
+## code
+```
+let foo = 0
+```
+````
+
+Some code segments use an ellipsis (`...`) to truncate code or use line highlighting for emphasis.
+
+```sp {3}
+let fn = fun(a, b) {
+  -- ellipsis instead of more code
+  ...
+}
+```
+
+Most of the larger mod examples use Rusted Moss Mod Loader's [syntax](/rm-docs/modding/rmml#syntax), since it supports multiple-line Catspeak code, which is easier for humans to read.
+
+# Contribute
+
+The easiest way to contribute is to just message me (`Harlem512`) on Discord with whatever input you wish to provide, and I'll probably listen to you. If you want to contribute more directly, you can submit an [issue](https://github.com/Harlem512/harlem512.github.io/issues) or a [pull request](https://github.com/Harlem512/harlem512.github.io/pulls). The raw documentation files are [here](https://github.com/Harlem512/harlem512.github.io/tree/main/modDocs) and served from [this directory](https://github.com/Harlem512/harlem512.github.io/tree/main/src/pages/rm-docs). You can add new articles by creating new `mdx` files under a directory, however they must have a `title`, `desc` (description), and `order` (used for ordering on the left) field in their frontmatter (the part with `---`).
+
+New topics can be made by adding a new directory and an `index.mdx` file, however I'll probably reject new topics unless you have a really good idea.
+
+If you like this (or hate it), also reach out. I'd love to know if anyone is actually reading any of this.
+
+## Markdown and Magic
+
+The documentation is powered by [MDX](https://mdxjs.com/) files, which are basically [Markdown](https://en.wikipedia.org/wiki/Markdown) with support for embedded Javascript. This makes changing things very easy, since Markdown is basically just plain text; you don't even need a development environment.
+
+These files then get parsed by [Astro](https://astro.build/), a web framework, which compiles them into raw HTML and generates the actual site you can read.
+
+The docs are best used as a half-width (for a 1920x1080 screen) Firefox browser tab and most of my design decisions are focused on that.
+
+## Syntax Highlighting
+
+Syntax highlighted is powered by [TextMate grammars](https://macromates.com/manual/en/language_grammars), made by me (except for GML highlighting, stolen from [Butterscotch Shenanigans](https://github.com/bscotch/stitch/blob/7dbc23c13341713a566e357f41084132d4d3593a/packages/vscode/syntaxes/gml.tmLanguage.json)). If you're ambitious, you can take the grammars and make a syntax highlighting extension for your favorite code editor. I leave that as an exercise for the reader (or ask me nicely).

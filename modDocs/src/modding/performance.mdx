@@ -1,0 +1,200 @@
+---
+title: 'Performance'
+desc: "Details about Catspeak's performance and how to improve it for your own code."
+order: 100
+---
+
+# What
+
+As with all high-level languages, Catspeak (and GML in general)'s ease-of-use features come at a performance cost. The performance hit is difficult to predict and will change depending on your hardware, but there are a few rules we can follow to make things faster.
+
+Why does this matter? Most game code needs to fit within 16ms, or the game's framerate will drop below 60fps. This problem is made worse by GameMaker's linking of rendering and game logic. If the game starts to lag, the entire game slows down, which can quickly lead to unfun times. As modders, we can write faster code to minimize, but never eliminate, the overhead of modding.
+
+For the following demonstrations, we'll use this example mod.
+
+````rmml
+# controller
+## draw_gui_end
+```
+let offscreenArray = [
+  {id: 0, name: "Fern", sprite: splayer_offscreen},
+  {id: 1, name: "Maya", sprite: splayer_maya_offscreen},
+  {id: 2, name: "Ameli", sprite: splayer_ameli_offscreen},
+]
+
+let findOffscreen = fun(name, offscreenArray) {
+  let index = 0
+  let found = undefined
+  while index < array_length(offscreenArray) {
+    if offscreenArray[index].name == name {
+      found = offscreenArray[index].sprite
+    }
+    index = index + 1
+  }
+  return found
+}
+
+draw_sprite(findOffscreen("Maya", offscreenArray), 0, 10, 10)
+```
+````
+
+# Premature Optimization
+
+You might've heard that "premature optimization is the root of all evil", and while this is absolutely true, there is some merit to developing with performance in mind. Your initial data layout can determine a lot of the performance characteristics of later code, and some optimizations are invasive enough to reward starting early.
+
+# 80% Optimizations
+
+When optimizing code, you want to look for "80% optimizations"; ways to increase your code's execution time by huge amounts. As commonly stated, 90% of time is spent in 10% of the code, and by optimizing that 10% we can achieve much better gains than by micro-optimizing the remaining 90% of the code.
+
+# Measure Everything
+
+Performance is extremely difficult to predict. Modern computers [are](https://en.wikipedia.org/wiki/Branch_predictor) [very](https://en.wikipedia.org/wiki/Single_instruction,_multiple_data) [complicated](<https://en.wikipedia.org/wiki/Cache_(computing)>). Changing code without first testing its performance can lead to failure, as what you expect to be faster turns out to be slower. Thankfully, measuring performance is easy:
+
+```sp
+let start = get_timer()
+
+-- code goes here
+
+let duration = get_timer() - start
+show_message(string(duration))
+```
+
+Naturally, there is some overhead here. For most purposes, we can safely ignore it, or do our performance test multiple times.
+
+```sp
+let start = get_timer()
+
+let i = 0
+while i < 1000 {
+  -- code goes here
+  i += 1
+}
+
+let duration = get_timer() - start
+show_message(string(duration))
+```
+
+Of course, the loop also adds overhead, but anything worth measuring will drown out the noise from the loop. There's a lot of variance, so let's smooth it out.
+
+```sp
+if global._timer_iterations == undefined {
+  global._timer_iterations = 0
+  global._timer = 0
+}
+let start = get_timer()
+
+-- code goes here
+
+let duration = get_timer() - start
+global._timer += duration
+global._timer_iterations += 1
+if global._timer_iterations % 600 == 0 {
+  show_message(string(global._timer / global._timer_iterations))
+}
+```
+
+Letting the test run gives us a baseline of about 76 microseconds. Let's see if we can go faster.
+
+# Catspeak Operations
+
+Every "operation" in Catspeak is performed internally as a function call. Since function calls are expensive, we can greatly improve performance by removing unnecessary work. This usually means leveraging language features or GameMaker functions to offload work off of Catspeak and onto faster parts of the engine. Every performance increase is primarily concerned with reducing the number of operations Catspeak needs to perform.
+
+```sp
+...
+  let len = array_length(offscreenArray)  -- store array length
+  while index < len {  -- read from variable
+    ...
+    index += 1  -- use += instead of + and =
+  }
+```
+
+The `+=` operator performs the addition and assignment in the same Catspeak function call, and saves about 4 microseconds.
+
+A `while` loop runs its check operation every time the loop executes and calling an expensive function like `array_length` can cause a performance hit. Adding or removing array elements inside the loop will now cause unexpected behavior, but it's worth the performance gain. This change saves about 8 additional microseconds.
+
+You might think we can do this for the array item as well (`array[index]`), but we actually see an increase in execution time. Since assigning a local variable is still a function call, we would need to use our local variable at least three times to see a benefit.
+
+# Caching
+
+Caching is a technique where you precompute a value and reference that value, instead of recalculating it every time. In our case, we're recreating the `array` array every frame, even though it doesn't change. Let's fix that, and put it inside a global variable during the `create` Event.
+
+````rmml
+# controller
+## create
+```
+-- store the array
+global.offscreenArray = [
+  {id: 0, name: "Fern", sprite: splayer_offscreen},
+  {id: 1, name: "Maya", sprite: splayer_maya_offscreen},
+  {id: 2, name: "Ameli", sprite: splayer_ameli_offscreen},
+]
+```
+## draw_gui_end
+```
+...
+-- read from the array
+draw_sprite(findOffscreen("Maya", global.offscreenArray), 0, 10, 10)
+```
+````
+
+Storing the array in a global also means we can read from it directly, instead of passing it as an argument. However, this is a performance regression; reading from a global costs more than storing it in a local variable first, which the function argument is doing for us.
+
+Caching the array like this saves about 16 microseconds, bring our total to about 48 microseconds. In real code, caching an expensive operation can provide very noticeable gains, especially for expensive operations like reading and writing files or rendering.
+
+Caching an expensive function can easily pass our 80% test by only running code once.
+
+# Data Layout
+
+For normal software, memory layout can have a huge impact on performance. However, we don't really care about that. Instead, we're concerned with the number of operations required to convert from raw data to our desired output.
+
+In the example mod, we're iterating over an array for a matching element. Instead of an array, what if we switch to a struct?
+
+````rmml
+# controller
+## create
+```
+global.offscreenMap = {
+  "Fern": splayer_offscreen,
+  "Maya": splayer_maya_offscreen,
+  "Ameli": splayer_ameli_offscreen,
+}
+```
+## draw_gui_end
+```
+draw_sprite(global.offscreenMap["Maya"], 0, 10, 10)
+```
+````
+
+At just 11 microseconds, we've cut 11 lines of code and 85% of our execution time. In reality, our data isn't always this nicely lined up, but we can still [cache](#caching) a faster data structure.
+
+# Lazy Loading
+
+[Lazy Loading](https://en.wikipedia.org/wiki/Lazy_loading) is a technique from web development. Instead of trying to do everything at once (ie in a `create` Event), we do things slower over a longer duration. In practice, we can use `alarm` or `step` Events to defer loading to later frames.
+
+````rmml
+# instance
+## create
+```
+alarm_set(0, 5)  -- set an alarm for five frames later
+```
+## alarm_0
+```
+-- expensive code here
+```
+````
+
+Many Rusted Moss objects have partial `create` and `room_start` Events. Instead of trying to do everything immediately, non-critical code can wait one or more frames when the load is lower. Remember, we get 16 milliseconds to render a frame, and not every frame needs all 16. The difference between 8 and 12 milliseconds per frame is invisible, the difference between 16 and 20 is a negative steam review.
+
+# Conclusion
+
+Writing code is easy. Writing code that's fast, easy to maintain, and doing it quickly enough to ship a product is impossible. Rusted Moss has performance issues, but it's sold more copies than any game you or I will probably make. We're also using microseconds, which we get over ten thousand of; the 4 microseconds from inlining a function isn't worth making the code unreadable.
+
+You also might've spotted some other optimizations. An early `return` after finding an element, or inlining the function call, or something else I missed. But don't waste time on simple stuff; look for the 80% cut.
+
+````rmml
+# controller
+## draw_gui_end
+```
+sprite_draw(splayer_maya_offscreen, 0, 10, 10)
+```
+````
