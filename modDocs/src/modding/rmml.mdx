@@ -88,7 +88,7 @@ mod_1 = float.ini
 
 You might expect that each mod would act independently; `name.ini` would show "Fern" in the top left corner, and `float.ini` would create a bunch of Instances that slowly float downwards. Instead, you get a runtime error.
 
-Rusted Moss doesn't differentiate between Instances created by different mods, which means every `instance` Instance runs the exact same code. This can cause errors, since you can't predict what other mods will do with their Instances. Sadly, truly fixing this problem is impossible because of [boring technical reasons](/rm-docs/modding/limitations#game-object-sadness) since it would involve creating new Game Objects (add adding code to their Events) at runtime, which GameMaker doesn't support.
+Rusted Moss doesn't differentiate between Instances created by different mods, which means every `instance` Instance runs the exact same code. This can cause errors, since you can't predict what other mods will do with their Instances. Sadly, truly fixing this problem is impossible because of [boring technical reasons](/rm-docs/modding/limitations#game-object-sadness) since it would involve creating new Game Objects (and adding code to their Events) at runtime, which GameMaker doesn't support.
 
 RMML half solves this issue by attaching a `mod_name` field to all Instances, and only running modded code if the `mod_name` on the Instance matches the `mod_name` of the mod. This sandboxes each Instance, ensuring that Event code only runs on Instances that are expecting it.
 
@@ -172,6 +172,64 @@ with oplayer {
   self.mod_name = global.rmml.current_mod
 }
 ```
+
+# How it Works
+
+RMML exists in two parts: a `.ini` that implements the Instance sandboxing, and a Catspeak file that contains the API calls used by the `.ini` mod. RMML's `.ini` mod contains Event code for all 21 Events, for all 6 Game Objects. The code in these functions looks like this.
+
+```sp
+with self {
+  global.rmml.exec("instance_events_draw", false, false)
+}
+```
+
+For non-`create` Events, this is all it needs. `with self` maintains `self` for the `exec` function, which is implemented elsewhere and used for all Events. The two booleans are pre-computed checks that are used in the `exec` function. Additionally, `player` Events use `omod_player` instead of `self`, since those Events don't set `self`. The `create` Event is slightly more complex.
+
+```sp
+with omod_instance {
+  if self.mod_name != undefined {
+    continue
+  }
+  self.mod_name = global.rmml.current_mod
+  global.rmml.exec("instance_events_create",true,false)
+}
+```
+
+For this code, we first set the `mod_name` of the new Instance before running the `exec` function. Let's look at that now.
+
+```sp {3,19}
+global.rmml.exec = fun (event, create, controller) {
+  -- check for mod code
+  let mod_events = global.rmml.modmap[event]
+  if mod_events == undefined {
+    return
+  }
+
+  -- use `struct_get` to bypass a fringe error case
+  let mod_name = struct_get(self, "mod_name")
+  let previous_mod = global.rmml.current_mod
+
+  -- find mod code to run
+  let i = 0
+  while i < array_length(mod_events) {
+    let ev_mod_name = mod_events[i]
+
+    if controller or mod_name == ev_mod_name {
+      -- run the mod code, but update the `current_mod`
+      global.rmml.current_mod = ev_mod_name
+      mod_events[i + 1]()
+    }
+
+    i += 2
+  }
+  -- reset the current mod
+  global.rmml.current_mod = previous_mod
+}
+```
+
+Line #3 is responsible for fetching modded code, and uses the Event name. It returns a flattened tuple array, mapping mod names to function calls. We then iterate over that list, and call any Event code that matches.
+
+Of course, all of this code is bad. The `create` parameter is a hold-over from an earlier version and should be removed. Why am I iterating over a list O(N) instead of a map lookup O(1)? Why is the `create` Event looping over every Instance instead of only the newly created one? Why use a `with` block at all, when you could just use `setSelf`? Why not use HIR modification instead of loading nearly identical code from a string? Realistically, it needs a complete rewrite, so all of this is subject to change.
 
 # History
 
