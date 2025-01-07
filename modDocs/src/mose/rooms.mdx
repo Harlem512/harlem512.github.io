@@ -1,5 +1,190 @@
 ---
 title: 'Rooms and Maps'
 desc: "Rusted Moss's room management system and how to abuse it."
-order: 0
+order: 1
 ---
+
+# Strange Errors and the Backrooms
+
+If you've tried using `room_goto` to go to a Room, you've probably run into some strange behavior. Weird crashes, a room that you can never leave, ending up in unexpected locations, what's happening?
+
+# `oroom_transition`
+
+While GameMaker does have Rooms, it doesn't have a standardized method of linking Rooms together. So how does Rusted Moss do it? The main example is the `oroom_transition` Game Object, which is responsible for the standard transition between adjacent rooms. Let's investigate.
+
+```gml {6,7,29}
+// gml_Object_oroom_transition_Create_0
+...
+// convert `image_angle` from degrees to a range [0-3]
+dir = ((image_angle + 45) % 360) div 90
+// store two mystery globals (we'll need these later)
+cx = global.player_map_x_
+cy = global.player_map_y_
+// get adjacent coordinate based on the `image_angle`
+switch dir
+{
+  case 0:
+    // `jump_dis` is specified by the Room editor
+    cx -= jump_dis
+    break
+  case 1:
+    cy += jump_dis
+    break
+  case 2:
+    cx += jump_dis
+    break
+  case 3:
+    cy -= jump_dis
+    break
+}
+// read from a mystery data structure, using our new coordinates
+m = ds_grid_get(global.map_grid_, cx, cy)
+if (m != 0)
+  // set a `target_room` based on another data structure, ...
+  target_room = global.map_data_[m][0].rom
+else
+  // ... or use the backrooms as a fallback
+  target_room = rm_sea_8
+...
+```
+
+First is some initialization code. This generates three Instance variable outputs: `cx`, `cy`, and `target_room`. Let's see what they're used for.
+
+```gml {8,9,18}
+// gml_Object_oroom_transition_Draw_75
+...
+// @ IF ( READY_TO_TRANSITION ) THEN
+  // set those two mystery globals using the values from earlier
+  global.player_map_x_ = cx
+  global.player_map_y_ = cy
+  // store the player's velocity for later
+  global.player_map_hsp_ = oplayer.hsp
+  global.player_map_vsp_ = oplayer.vsp
+  // hey, it's how the climb hardmode works, neat
+  if (force_room != 0 && (instance_exists(oclimb_hardmode) || force_push_room))
+  {
+    global.player_map_x_ = global.map_data_[force_room][0].xx
+    global.player_map_y_ = global.map_data_[force_room][0].yy
+    target_room = force_room
+  }
+  // go to the target Room
+  room_goto(target_room)
+  // keeps this Instance around after the Room transition
+  persistent = true
+// @ END IF
+...
+```
+
+This code is what actually moves the Player between Rooms. Notice that we're not just using `room_goto` directly, we're also setting the globals `player_map_x_` and `player_map_y_`. If we don't then the `oroom_transition` Instances in the next room won't find the correct adjacent Rooms, leading to a desync.
+
+If you're curious how the Player is created in the next room (since the Player isn't peristent), check out the `room_start` Event for `oroom_transition` (in `gml_Object_oroom_transition_Other_4`).
+
+You'll notice that there are two load-bearing data structures here, `global.map_data_` and `global.map_grid_`. Both of these are necessary for `oroom_transition` to work properly, so let's inspect them.
+
+# `global.map_data_`
+
+`global.map_data_` is two-dimensional array that maps internal Room [indexes](/rm-docs/gml/ids) to an array of sub-rooms, each containing Room metadata.
+
+```gml
+[
+  ...
+  [-1.0], // no data, this Room index is unused
+  [
+    // a single room
+    {
+      // internal room index
+      "rom": 2.0,
+      // x/y coordinates for `player_map_[x/y]_`
+      "xx": 47.0, "yy": 31.0,
+      // map rendering metadata (for the tab menu)
+      "index": 2.0, "angle": 90.0, "color": 6,
+      // pickup metadata
+      "extra": 6.0, "found": 0.0,
+    }
+  ],
+  [
+    // a two-high room
+    {
+      "rom": 4.0,
+      "xx": 49.0, "yy": 30.0,
+      "index": 5.0, "angle": 90.0, "color": 6,
+      "extra": false, "found": 0.0,
+    },
+    {
+      "rom": 4.0,
+      "xx": 49.0, "yy": 29.0,
+      "index": 5.0, "angle": -90.0, "color": 6,
+      "extra": false, "found": 0.0,
+    }
+  ],
+  ...
+]
+```
+
+# `global.map_grid_`
+
+This is a much simpler data structure. It is a `ds_grid`, and translates the `xx` and `yy` coordinates in `global.map_data_` to a Room index.
+
+```sp {6}
+let room = rm_test
+let room_meta = global.map_data_[rm_test][0]
+let xx = room_meta.xx
+let yy = room_meta.yy
+-- read from map
+let roomFromMap = ds_grid_get(global.map_grid_, xx, yy)
+
+if room == roomFromMap {
+  show_message("Success!")
+}
+```
+
+This structure is mostly empty. It also contains many rows that similarly completely empty.
+
+# Drawing the Map
+
+An additional upside is that we can draw the game's map very easily. The `map_draw()` function in `gml_GlobalScript_map_scripts` contains the code that draws the map, using the metadata from `global.map_data_`.
+
+# Just give me the Code
+
+Ok, ok, enough yapping. Here's how to go to any standard Room.
+
+```sp
+-- takes us to the chosen room
+global.room_goto_fix = fun (room) {
+  let room_meta = global.map_data_[room][0]
+  global.player_map_x_ = room_meta.xx
+  global.player_map_y_ = room_meta.yy
+  room_goto(room)
+}
+```
+
+If you want to go to an arbitrary Room (such as one made by `room_add` or a Room that isn't part of `map_data_`), you'll need to populate `global.map_data_` and `global.map_grid_` with fake data to trick `oroom_transition` Instances, or implement your own Room transition logic.
+
+You might want to dump `global.map_grid_`, so here's some code to JSON stringify a `ds_grid`.
+
+```sp
+global.map_stringify = fun(grid) {
+  let w = ds_grid_width(grid)
+  let h = ds_grid_height(grid)
+  let str = "["
+  let x = 0
+  while x < w {
+    let y = 0
+    str += "["
+    while y < h {
+      str += string(ds_grid_get(grid, x, y))
+      y += 1
+      if y != h {
+        str += ","
+      }
+    }
+    str += "]"
+    x += 1
+    if x != w {
+      str += ","
+    }
+  }
+  str += "]"
+  return str
+}
+```
