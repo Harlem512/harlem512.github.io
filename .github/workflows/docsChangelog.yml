@@ -9,6 +9,7 @@ on:
 
 jobs:
   comment_on_commit:
+    permissions: write-all
     runs-on: ubuntu-latest
 
     steps:
