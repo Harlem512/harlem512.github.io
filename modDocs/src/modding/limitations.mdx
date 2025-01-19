@@ -8,9 +8,28 @@ order: 2
 
 Rusted Moss's modding support is very powerful. Writing arbitrary code as if we had access to the full source code means we don't have the same restrictions as other modding systems. Instead of being limited by modding support or external tools, we're limited by Rusted Moss's _interesting_ codebase and GameMaker's runtime limitations; if you can make it in normal GameMaker, you can make 99% of it on top of Rusted Moss's modding system.
 
+# Writing Gamemaker Language Code
+
+Normally, all code we write must use Catspeak. This is usually fine, since Catspeak doesn't impose many limitations. However, you might want to write GML code either to use a feature that Catspeak doesn't support. In these cases, we can utilize the [Gamemaker Live](https://yal.cc/docs/gm/gmlive/) extension, which comes installed with Rusted Moss. You can do a lot with it, but here's a short example.
+
+```sp
+live_snippet_call(live_snippet_create("
+// GML code here
+global.hello_from_gml = function (msg) {
+  show_message(msg)
+}
+"))
+
+global.hello_from_gml("Hello World!")
+```
+
+I don't recommend using this frequently, since it's probably less efficient than just using Catspeak.
+
 # Shaders
 
 New shaders are impossible to make. This is a limitation of GameMaker and cannot be bypassed. Rusted Moss does offer a few [shaders](/rm-docs/mose/misc#shaders) that we can use, and we can emulate a lot of shader behavior using software rendering. Just keep in mind that you will take a [performance](/rm-docs/modding/performance) hit for emulating shader behavior with software.
+
+Upon further review, shaders might be possible. Rusted Moss contains [shader-replace-simple](https://yellowafterlife.itch.io/gamemaker-shader-replace-simple), which can probably be used to compile shaders at runtime. Getting this to work is an exercise left to the viewer.
 
 # One Thousand Milliseconds
 
@@ -25,7 +44,19 @@ while i < 10 {
 
 Catspeak limits execution time to one thousand milliseconds (one second), starting when you first enter Catspeak. For our purposes, this means that every Event we write must fully complete within that time frame.
 
-For almost all purposes, this is plenty of time. Most code is limited to 16ms anyway (the duration of one frame), so you'll only run into this limit if you're doing something bad (like trying to [build a mod loader](/rm-docs/modding/rmml)).
+For almost all purposes, this is plenty of time. Most code is limited to 16ms anyway (the duration of one frame), so you'll only run into this limit if you're doing something bad (like trying to [build a mod loader](/rm-docs/modding/rmml)). However, just because a limit exists doesn't mean we need to follow it.
+
+````rmml
+# controller
+## create
+```
+let s = method_get_self(ds_map_find_value(global.mod_map,"controller_events_create"))
+s.callTime = infinity
+while true { }
+```
+````
+
+The limitation exists per-function call, so you would need to set the callTime for every function in the stack.
 
 # Decompilation
 
