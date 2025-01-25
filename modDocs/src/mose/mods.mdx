@@ -101,7 +101,7 @@ As shown, `global.mod_map` is the main data structure that relates Event names t
 | `{OBJECT}_events_{EVENT}`       | Normal map key for most Events       | `controller_events_create`     |
 | `{OBJECT}_events_other_{EVENT}` | Map key for `room` and `user` Events | `instance_events_other_user_1` |
 
-If you're paying attention, you might notice a few issues. We can only store one function per Event, there isn't any sandboxing for Instances (so different mods' code can run on the same Game Object), and code must be one line, since `.ini` files don't support multi-line strings. These are [limitations](/rm-docs/modding/rmml#why) that we must work around, by using [your own code](#catspeak-codegen) or [Rusted Moss Mod Loader](/rm-docs/modding/rmml).
+If you're paying attention, you might notice a few issues. We can only store one function per Event, there isn't any sandboxing for Instances (so different mods' code can run on the same Game Object), and code must be one line, since `.ini` files don't support multi-line strings. These are [limitations](/rm-docs/rmml/design#why) that we must work around, by using [your own code](#catspeak-codegen) or [Rusted Moss Mod Loader](/rm-docs/rmml/quickstart).
 
 # Catspeak Codegen
 
@@ -127,4 +127,4 @@ let function = compile_mod_event("mods/codeFile.txt")
 ds_map_set(global.mod_map, "controller_events_create", function)
 ```
 
-Using this technology, we are no longer limited by Rusted Moss's mod loading and can substitute our [own mod loader](/rm-docs/modding/rmml). On thing to keep in mind is that Catspeak takes a long time to fully compile code, long enough that you can easily start running into the 1000ms limitation or cause noticeable slow-downs.
+Using this technology, we are no longer limited by Rusted Moss's mod loading and can substitute our [own mod loader](/rm-docs/rmml/quickstart). On thing to keep in mind is that compiling code takes a long time, long enough that you can easily start running into the 1000ms limitation or cause noticeable slow-downs. This can be mitigated by storing code in a global and only compiling on startup.

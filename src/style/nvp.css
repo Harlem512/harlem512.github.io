@@ -138,7 +138,7 @@ footer > aside {
 /* MARK: table */
 table {
   border-collapse: collapse;
-  table-layout: fixed;
+  /* table-layout: fixed; */
   width: 100%;
 }
 
@@ -387,6 +387,14 @@ pre[data-language='rmml']::before {
 pre[data-language='sp']::before,
 pre[data-language='catspeak']::before {
   content: 'Catspeak';
+}
+
+pre[data-language='jayspeak']::before {
+  content: 'JaySpeak';
+}
+
+pre[data-language='csv']::before {
+  content: 'CSV';
 }
 
 pre[data-language='gml']::before {

@@ -79,6 +79,12 @@ There are three main folders for modding.
 | `%LocalAppData%\Rusted_Moss`         | Save Folder  | Read/Write   | Changeable files, persistent data |
 | `%LocalAppData%\Temp`                | Temp Folder  | Read/Write\* | Temporary files                   |
 
-When reading a file, the game first checks the Save folder for a matching file, then it checks the Steam folder. The Steam folder forbids writing, so any if you write to file, it always writes to the Save folder.
+When reading a file, the game **_first checks the Save folder_** for a matching file, then it checks the Steam folder. The Steam folder forbids writing, so any if you write to file, it always writes to the Save folder.
 
 Reading from or writing to the Temp folder requires prefixing the path with `temp_directory_get()`. Files in the Temp directory can be freely deleted at any time, so you should only use it for temporary files.
+
+# Globals
+
+The global namespace can be accessed using the `global` struct, and contains many persistent data structures and variables, such as Player data (ie `global.ameli_mode_`, `global.hp`, etc), UI state (`global.gamestate`), and other data.
+
+Unlike Instances, which are cleared, **_global variables are not reset_**. This is especially important when using Gamemaker's [data structures](https://manual.gamemaker.io/lts/en/GameMaker_Language/GML_Reference/Data_Structures/Data_Structures.htm) or loading assets (ie `room_add`, `sprite_add`, etc).

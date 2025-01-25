@@ -1,0 +1,88 @@
+---
+title: 'Migration to RMML 6'
+desc: "What's new and how to not break your existing installation."
+order: 4
+---
+
+# RMML 6 and RMMM
+
+Rusted Moss Mod Loader 6 is the future. Featuring [performance improvements](/rm-docs/rmml/api#caching), a [new syntax](/rm-docs/rmml/advanced#indexcsv), [safety features](/rm-docs/rmml/advanced#dev-mode), and an included Mod Manager, modding has never looked better. With this update, RMML's core API has essentially locked in; any future updates cannot modify behavior without breaking future mods or create dependency hell.
+
+Naturally, "the last" RMML update means breaking some things. This page details what has changed, but here's the short version for players of mods:
+
+# For Players
+
+After (optionally) backing up your `mods` folder, you can [download RMML 6](/rm-docs/rmml/quickstart#install) and install it like normal. If you have existing mods, you can either download them again with Rusted Moss Mod Manager in-game, or put your old mods in the `mods/rmml` folder. Downloaded mods are located in the [Saves folder](/rm-docs/gml/architecture#folders). Any mod configuration (such as Maya/Ameli palette options) should be placed in the mod.
+
+The old `mods/rmml/modlist.txt` (in the Steam directory) has been to `mods/modlist.txt` in the Saves folder. If you have manually installed mods, they must be re-added to the mod list. RMMM can do this for you using the in-game UI, or you can find the new list in the [Saves folder](/rm-docs/gml/architecture#folders). The mod list in the Steam directory is only used if the game crashes.
+
+# For Mod Makers
+
+Some of you already have RMML 6 Beta installations, which can be safely updated with RMMM. If you have an existing RMML 5 (or lower) installation, you can follow the [for players](#for-players) section and come back.
+
+Here's the quick changed stuff:
+
+- _Steam `mods/rmml/modlist.txt` -> Saves `mods/modlist.txt`_: You shouldn't need to modify either file, since RMMM will manage them.
+- _`rmml_log.txt` -> `mods/log.txt`_: Logging functions have changed file paths. If you _need_ to use the old filename, you can set `global.rmml.log_name` like normal.
+- _Each mod makes an `omod_controller`_: Each mod has its own `omod_controller` Instance; Alarms and instance variables will work as expected, `with` and `instance_number` will not.
+- _`global.rmml.current_mod` -> `global.rmml_current_mod`_: The currently running mod. `self.mod_name` and how mod names are determined is unchanged.
+- _[Dev Mode](/rm-docs/rmml/advanced#dev-mode)_: (Some) startup errors are caught, no hot-reloading, etc. See the link for more details.
+- _`global.rmml.modmap` -> `global.rmml_map`_: Structure has [changed](#globalrmmlmodmap---globalrmml_map). Still shouldn't modify this directly, use [`global.rmml.register`](/rm-docs/rmml/api#globalrmmlregister) instead.
+- _`global.rmml.exec`, `global.rmml.purge_fn`, and `global.rmml.as`_: They're gone, never to return again (probably).
+- _No more duplicate Game Object and Event pairs_: Before, you could specify multiple `controller` `create` (for example) code fences. This is now an error. Unless you're abusing RMML's specifications, this shouldn't change anything.
+
+And here's the new (technical) stuff:
+
+- _`global.rmml.try(try, catch, ...args)`_: Wraps the passed function in a try-catch block using magic powers.
+- _`global.rmml.warn(msg)` and `global.rmm.warnings`_: Warnings thrown during the mod loading process (or user programs). Most errors from before are warnings now.
+- _`global.rmml.clone(struct)`_: Shallow copies a struct of structs. Used for RMML's internals (please don't modify it \<3).
+
+# `global.rmml.modmap` -> `global.rmml_map`
+
+The structure of RMML's mod map, used for associating Events, mod names, and Catspeak functions, has changed. In RMML 5, it was a struct containing an array containing a flattened tuple of a mod name and a function.
+
+```sp
+global.rmml.modmap = {
+  "controller_events_create": [
+    "my_mod", fun () { ... },
+    "your_mod", fun () { ... },
+  ],
+  "instance_events_other_room_start": [
+    "my_mod", fun () { ... },
+  ],
+}
+```
+
+In RMML 6, this is a simpler struct of structs.
+
+```sp
+global.rmml_map = {
+  "controller_events_create": {
+    "my_mod": fun () { ... },
+    "your_mod": fun () { ... },
+  },
+  "instance_events_other_room_start": {
+    "my_mod": fun () { ... },
+  },
+}
+```
+
+You probably weren't modifying this structure directly (use [global.rmml.register](/rm-docs/rmml/api#globalrmmlregister)), but there is one user-facing change. RMML no longer supports multiple code blocks for the same Game Object and Event. For example, the following fails.
+
+````rmml
+# controller
+## create
+
+```
+-- this doesn't run
+-- (and causes a startup error)
+show_message("Hello")
+```
+
+```
+-- this DOES run
+show_message("World!")
+```
+````
+
+Having multiple code blocks for the same Event-Game-Object pair was counter-intuitive and could lead to bugs, such as if you forgot an Event header.

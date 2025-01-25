@@ -20,7 +20,7 @@
     "headers": {
       "patterns": [
         {
-          "match": "^#{1,2}\\s+\\w+$",
+          "match": "^#{1,2}\\s+.*$",
           "name": "markup.heading.markdown"
         }
       ]
@@ -35,7 +35,7 @@
     },
     "fenced_code_block_catspeak": {
       "comment": "Matches all code blocks",
-      "begin": "(^|\\G)(\\s*)(`{3,}|~{3,})\\s*(?i:(catspeak|sp|\n)((\\s+|:|\\{)[^`~]*)?$)",
+      "begin": "(^|\\G)(\\s*)(`{3,}|~{3,})\\s*(?i:(catspeak|sp|js|\n)((\\s+|:|\\{)[^`~]*)?$)",
       "name": "markup.fenced_code.block.markdown",
       "end": "(^|\\G)(\\2|\\s{0,3})(\\3)\\s*$",
       "beginCaptures": {

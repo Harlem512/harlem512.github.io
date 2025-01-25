@@ -1,0 +1,71 @@
+---
+title: 'Quickstart'
+desc: 'How to get started with Rusted Moss Mod Loader.'
+order: 0
+---
+
+import CodeTable from '@/components/CodeTable.astro'
+
+# Paid Shill
+
+Throughout this documentation, there have been a lot of references to Rusted Moss Mod Loader (RMML). RMML is a tool created by me to aid in my personal modding journey (not that it can't be used by others), and its design is heavily influenced by its [history](/rm-docs/rmml/history). I highly recommend using it, or building [something similar](/rm-docs/mose/mods#globalmod_map), if you are going to do serious modding.
+
+This article contains detail on how to install RMML and the basics for making mods with it.
+
+# Install
+
+RMML is available on the [rm-mod-manager](https://github.com/Harlem512/rm-mod-manager/releases) Github page. Download the latest release's `rmml_{VERSION}.zip` file, and unzip it into the Steam `mods` folder, replacing `meta_info.ini`.
+
+```
+mods/
+  rmml/
+    rmml.meow
+    rmmm.md
+  asset_list.ini
+  constant_list.ini
+  function_list.ini
+  meta_info.ini
+  method_list.ini
+  modlist.txt
+  rmml.ini
+  sniper_bnuy.ini
+```
+
+You can write mods using the "standard" `.ini` syntax or RMML's `.md` syntax (or [`index.csv`](/rm-docs/rmml/advanced#indexcsv)). Mods written with RMML installed should be placed in the `mods/rmml` folder and enabled with Rusted Moss Mod Manager in-game, or added to the [modlist](#modlisttxt).
+
+<CodeTable
+  caption="INI Mod VS RMML Mod"
+  languages={['mini', 'rmml']}
+  entries={[
+    [
+      "[object_list]\ncontroller = enabled\ninstance = enabled\n[controller_events]\ncreate='show_message(\"Foo\")'\nroom_start='show_message(\"Bar\")'\n[instance_events]\ncreate='self.y += self.vsp; self.vsp *= 0.5; if self.vsp < 0.1 { instance_destroy(self) }'",
+      '# controller\n## create\n```\nshow_message("Foo")\n```\n\n## room_start\n```\nshow_message("Bar")\n```\n\n# instance\n## create\n```\nself.y += self.vsp\nself.vsp *= 0.5\nif self.vsp < 0.1 {\n  instance_destroy(self)\n}\n```',
+    ],
+  ]}
+/>
+
+For more information about the syntax, check out the [full page.](/rm-docs/rmml/advanced#md)
+
+RMML also uses the save folder for storing logs and other information. If you're using Rusted Moss Mod Manager (which comes installed with RMML), any mods you download are also in that folder. On Windows, this is `%LocalAppData%/RustedMoss`. For more information about how RMML works, see [the full article.](/rm-docs/modding/rmml)
+
+# Rusted Moss Mod Manager
+
+RMML comes installed with Rusted Moss Mod Manager (RMMM). This mod lets you download mods off the [internet](https://github.com/Harlem512/rm-mod-database), manage your mod installation, and adds safety features. 
+
+# `modlist.txt`
+
+RMML completely bypasses Rusted Moss's mod loading when loading other mods, and doesn't read the mod list in `meta_info.ini`. Instead, the file `modlist.txt` in the `mods` directory stores a list of mods to load.
+
+```
+# put your mods here (or disable them with #)
+# mods are loaded (and run) in the order written here
+rmml_modlister.md
+ccw_shark.md
+cc_shark.md
+
+my_mod_here.md
+my_other_mod.ini
+your_mod_folder/mod_name.md
+```
+
+If you're using RMMM, this file is located in the [saves folder](/rm-docs/gml/architecture#folders) instead of the Steam folder. If you're using RMMM, I recommend ignoring this file, and using RMMM to manage your mods in-game instead.

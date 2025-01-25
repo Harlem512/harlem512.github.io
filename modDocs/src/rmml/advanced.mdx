@@ -1,0 +1,313 @@
+---
+title: 'Features'
+desc: "Technical descriptions of RMML's features and how to use them."
+order: 1
+---
+
+import CodeTable from '@/components/CodeTable.astro'
+
+# Differences
+
+For most use cases, RMML is an otherwise invisible middleman that sits between your mod's code and Rusted Moss. However, there are a things to keep in mind when using RMML.
+
+## Game Objects, `global.rmml_current_mod`, and `self.mod_name`
+
+Because of [boring technical reasons](/rm-docs/modding/limitations#game-object-sadness), RMML can't just make a `omod_controller_my_mod` Game Object and attach your code to it. Instead, it uses `self.mod_name` as a key into a struct pairing your mod's name with a Catspeak function call.
+
+RMML tracks the currently running mod with `global.rmml_current_mod`, which should be compared against when using `with` or `instance_find`.
+
+```sp
+with omod_instance {
+  if self.mod_name != global.rmml_current_mod {
+    continue
+  }
+  ...
+}
+```
+
+You can exploit this to create instances for other mods or use [sub-mods](#sub-mods).
+
+```sp
+instance_create_depth(0,0, 0, omod_instance, { mod_name: "your_mod" })
+```
+
+## `controller`
+
+Rusted Moss Mod Loader creates a `controller` Instance for each mod that is loaded. This lets you use alarm Events and Instance variables normally. However, you can't use `instance_find` or `with` directly, and need to check for the mod name as demonstrated above.
+
+## `player`
+
+In `INI` modding, `omod_player` Events don't set `self` to the Player Instance. RMML sets self to the current `omod_player` Instance automatically. Additionally, the Player Instance is sandboxed like other Instances; **_if you want to use the Player, you need to set `self.mod_name` on the Instance._**
+
+```sp
+with oplayer {
+  instance_change(omod_player, false)
+  self.mod_name = global.rmml_current_mod
+}
+```
+
+You also can't have two mods installed that try to modify the Player, since only one mod's Event code can run. This is a solvable problem, but goes against my design goals with RMML since it would be too invasive. You'd need to support three types of Player mods: mods that runs before `event_inherited()`, mods that replace the normal inheritance, and mods that run after `event_inherited()`. And make sure the Player instance is properly converted into an `omod_player` in all cases.
+
+# Mod File Support
+
+RMML doesn't just support `.md` files. It can interpret `.ini`, `.meow`, and `index.csv` files. All mods loaded by RMML receive its main benefits, unless otherwise limited.
+
+- `.md`: The standard mod file, simplified Markdown. A classic one-file solution for small- to medium-sized mods.
+- `.ini`: The standard mod file, like [`sniper_bnuy.ini`](/rm-docs/intro/bnuy). Still suffers from single-line coding. Included for easy porting of existing mods.
+- `.meow`: A Catspeak source file, run immediately after loading. This happens _during_ the mod loading process, letting you modify RMML's behavior or load your mod manually. Largely super-seeded by the [game start script](#game-start-script) and `index.csv`.
+- `index.csv`: A `.csv` file that associates Catspeak source files with a Game Object and Event (and optional [sub-mod](#sub-mods)). Features faster parsing and better ergonomics.
+
+Internally, all mods (except for `.meow` scripts, which run immediately) are eventually inserted into [`global.rmml_map`](/rm-docs/rmml/api#globalrmml_map).
+
+## `.ini`
+
+The original `.ini` syntax. This is the only mod syntax that Rusted Moss supports directly. Support for `.ini` mods is only included for legacy purposes, I highly recommend _not_ using it.
+
+```mini
+[object_list]
+controller = enabled
+instance = enabled
+
+[controller_events]
+room_start = "i = 0; while ( i < instance_number(oenemy_flame_sniper) ) { c = instance_find(oenemy_flame_sniper,i); instance_create_depth(c.x,c.y,30,omod_instance); i += 1; }"
+
+[instance_events]
+create = "self.parent = instance_nearest(self.x,self.y,oenemy_flame_sniper);"
+draw = "if ( instance_exists(self.parent)) { draw_sprite_ext( spuck_bunny_ears, 0, self.parent.x, self.parent.y-8, 1, 1, 0, c_white, 1 ) }"
+step = "if ( instance_exists(self.parent) ) { if ( self.parent.legs == smaya_legs_run )  { self.parent.vsp = self.parent.vsp -4; } }"
+```
+
+## `.md`
+
+The classic RMML syntax, supporting all features. This is recommended for most mods, as it simplifies development and distribution. In short, it's a simplified version of [Markdown](https://en.wikipedia.org/wiki/Markdown), with each code fence interpreted as Catspeak code and H1 and H2 headers used to specify Game Object and Event names.
+
+````rmml
+a game object header
+# controller
+
+an event header
+## room_start
+
+a code fence, interpreted as Catspeak
+```
+-- some code
+instance_create_depth(0,0, 0, omod_instance)
+```
+
+another event
+## draw_gui_end
+```
+...
+```
+
+a second game object
+# instance
+...
+````
+
+Game Objects are specified using a single H1 header (ie `# controller`), with all following code and H2 headers applied to that [Game Object](/rm-docs/gml/objects). H2 headers (ie `## room_start`) are [Event names](/rm-docs/gml/events) and affect the code block immediately following it. Event code for an Event goes between sets of three backticks ` ``` ` at the start of a line and is interpreted as Catspeak code. These code fences can include line breaks, comments, and both types of quotes.
+
+All other text in a `.md` file is ignored. If you need explicit comments (such as for commenting out code fences), you can use HTML comments (`<!-- Comment -->`).
+
+If you're using my [VS Code highlighter](https://github.com/Harlem512/vsc-catspeak), you'll want to add `catspeak`, `sp`, or `meow` after the three backticks (ie ` ````catspeak `) to specify the language.
+
+## `index.csv`
+
+A file named `index.csv` inside a folder in the `mods/rmml` directory can also be interpreted as a mod. This is a [csv](http://super-csv.github.io/super-csv/csv_specification.html), without a header. Each row is in the following order.
+
+| Index | Example                                               | What                                                                                               |
+| ----- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| 0     | `controller`                                          | A [Game Object name](/rm-docs/gml/objects)                                                         |
+| 1     | `create`                                              | An [Event name](/rm-docs/gml/events)                                                               |
+| 2     | `filename.meow` OR `"do { show_message(""hello"") }"` | Either a relative path from `mods/rmml/{MOD_NAME}` or a single line of code (starting with `do {`) |
+| 3     | `sub_mod`                                             | An optional [sub-mod](#sub-mods) name. Don't include this to use your main mod.                    |
+
+Here's what that might look like, with an example folder layout.
+
+```csv
+{OBJECT},{EVENT},{FILENAME_OR_CODE},{?SUB_MOD?}
+controller,create,controller_create.meow
+basic,step_end,my_basic_end.meow,inherited_mod
+instance,draw,"do { show_message(""Hello World!"")}"
+```
+
+```
+mods/
+  rmml/
+    my_mod/
+      index.csv
+      controller_create.meow
+      my_basic_end.meow
+```
+
+If your file names contain spaces, you should wrap the entire path in double quotes `"`. Inline code blocks containing double quotes should be wrapped in double quotes, with double quotes in the code replaced with two double quotes (ie `""string""`). Inline code blocks should be kept to a minimum, because otherwise you're just using an `ini` mod.
+
+I recommend using `index.csv` format for large mods. They load much faster (by bypassing RMML's slow `.md` parser) and have better developer ergonomics compared to managing a 1000+ line file.
+
+# Game Start Script
+
+If you use a `.md` mod and don't use a Game Object and Event header, the resulting code is run during the mod loading process, and only **_once per game start_**. You can use this to load sprites or initialize global scripts, without needing to check a global or parse extra Catspeak.
+
+````rmml
+no object or event header
+```sp
+-- this code only runs the first time the mod is loaded
+global.my_sprite = sprite_add("mods/rmml/my_mod", 1, false, false, 0, 0)
+```
+
+# controller
+## draw_gui_end
+has headers
+```sp
+draw_sprite(global.my_sprite, 0, 0, 0)
+```
+````
+
+`index.csv` mods also support the game start script, by using empty Game Object and Event columns.
+
+```csv
+,,game_start.meow
+,,"do { show_message(""Hello World!"")}"
+```
+
+# Dev Mode
+
+RMML implements multiple safety features to prevent mods from crashing your game on start up, preventing you from accessing RMMM's UI. his is a list of changes Dev mode currently supports. You can implement your own Dev features in your own mods.
+
+- Exception handling for creating `controller`s and [game start scripts](#game-start-script)
+- Better line numbers for `.md` mods. Counting starts from the start of the file, instead of the start of the fence.
+- Mods are fully loaded when you return to the main menu, instead of loading from a cache.
+- RMMM resets the mod list if a startup crash (ie syntax or `room_start` error) is detected
+
+The easiest way to disable dev mode is with a game start script:
+
+<CodeTable
+  caption="Game Start Scripts"
+  languages={['rmml', 'csv', 'mini']}
+  entries={[
+    [
+      '```\nglobal.rmml.dev = false\n```\n\n# controller\n...',
+      '\n,,"global.rmml.dev = false"\n...',
+      'Unsupported :)',
+    ],
+  ]}
+/>
+
+# JaySpeak
+
+JaySpeak is a dirty hack, the pinnacle of my lack of planning. The idea is that Javascript code is similar enough to Catspeak, so why not convert Javascript code (which has powerful developer tools) into Catspeak code?
+
+<CodeTable
+  caption="INI Mod VS RMML Mod"
+  languages={['jayspeak', 'sp']}
+  entries={[
+    [
+      '// comment\nlet x = function(a, b, c) {\n  return a || b && type(c) == "string"\n}',
+      '-- comment\nlet x = fun(a, b, c) {\n  return a or b and typeof(c) == "string"\n}',
+    ],
+  ]}
+/>
+
+In practice, this sucks. RMML reads JaySpeak blocks (` ```js`) and does simple string replacement on the resulting code. This leads to all sorts of weird, difficult to debug errors as parts of your code are silently converted into illegal function calls and misnamed variables. It's also slow, since the entire code fence must be placed into a string for replacement.
+
+If you still want to use it (for some reason), you can add `js` as the `.md` code fence language.
+
+````rmml
+# controller
+## create
+```js
+// comment
+let x = function(a, b, c) {
+    return a || b && type(c) == "string"
+}
+```
+````
+
+I will not be adding JaySpeak support to `index.csv` mods. Implementing a Typescript -> Javascript -> Catspeak pipeline is an exercise left to the reader.
+
+# Finding Mod Files
+
+`modlist.txt` entries are treated as partial paths, which are added to `mods/rmml`. The partial path also determines the mod's internal mod name, used by `global.rmml_current_mod` and `self.mod_name`.
+
+| Name on `modlist.txt` | Full Path                  | Internal Mod Name |
+| --------------------- | -------------------------- | ----------------- |
+| `my_mod.md`           | `mods/rmml/my_mod.md`      | `my_mod`          |
+| `my_mod.ini`          | `mods/rmml/my_mod.ini`     | `my_mod`          |
+| `my_mod.meow`         | `mods/rmml/my_mod.meow`    | `my_mod`          |
+| `path/to/mod.md`      | `mods/rmml/path/to/mod.md` | `path/to/mod`     |
+
+Instead of a file, you can specify a folder. If you add `my_mod` to `modlist.txt`, RMML will look for the following files, in order. In all cases, the internal mod name will be the name of the folder (`my_mod`).
+
+| Source File Partial Path | Full Path                    |
+| ------------------------ | ---------------------------- |
+| `my_mod.md`              | `mods/rmml/my_mod/my_mod.md` |
+| `index.md`               | `mods/rmml/my_mod/index.md`  |
+| `index.csv`              | `mods/rmml/my_mod/index.csv` |
+
+If you want RMMM to properly find your mod, it should either be a single file (`.md`, `.ini`, or `.meow`) or one of the three folder options. Additionally, if your mod doesn't fit in a single file (because of external sprite assets, or split source files, or other external data) all of your mod's files should be placed in your main folder.
+
+Here's an example layout, using `index.csv` to split code into multiple files.
+
+```csv {7}
+mods/
+  rmml/
+    my_mod/
+    |   src/
+    |   |   controller_create.meow
+    |   |   instance_ally_draw.meow
+    |   |   instance_enemy_draw.meow
+    |   sprites/
+    |   |   enemy.png
+    |   |   ally.png
+    |   index.csv
+    rmml.meow
+    rmmm.md
+  modlist.txt
+  meta_info.ini
+```
+
+# Sub-Mods
+
+By default, all modded code you write is associated with your mod's [internal name](#find-mod-files). `.md` and `index.csv` mods support registering Event code with other mods instead of the standard mod.
+
+````rmml {5,6,15,21}
+# controller
+## room_start
+```
+instance_create_depth(0,0, 0, omod_instance)
+instance_create_depth(0,0, 0, omod_instance, { mod_name: "my_mod_a" })
+instance_create_depth(0,0, 0, omod_instance, { mod_name: "my_mod_b" })
+```
+
+# instance
+## create
+```
+show_message("Default Object!")
+```
+
+# instance my_mod_a
+## create
+```
+show_message("Object A!")
+```
+
+# instance my_mod_b
+## create
+```
+show_message("Object B!")
+```
+````
+
+The text after the Game Object header (`# instance`) is interpreted as a sub-mod, and supports all of the standard RMML features. Internally, sub-mods are their own mod, featuring their own mod name (ie `my_mod_a` and `my_mod_b`). This means you can set `mod_name` to that mod's name and run its code, which lets you emulate creating new Game Objects.
+
+Note that these sub-mods have no relation to the file they're in. Using `global.rmml.unload` on `my_mod` won't unload `my_mod_a` or `my_mod_b`. While you _can_ specify sub-mod `controllers`, RMML won't make a `controller` with that name automatically. I also recommend adding a common prefix to your mods, to prevent overriding someone else's mod (unless this is desired).
+
+# Publishing to the Database
+
+The [rm-mod-database](https://github.com/Harlem512/rm-mod-database), which RMMM uses to store mods, isn't just for me. If you have a mod you want added, you can either submit a Pull Request updating `manifest.json` or contact me (Harlem512) on Discord in the `# modding-discusson` or DMs and I'll do the hard part. I do have a few submission requirements, however.
+
+1. _Host on a Permanent Link_. Because I don't want to distribute malware, all links in `manifest.json` must be permanent (enough) or managed by me. I will basically only accept raw Git-based links (Github, Gitlab, BitBucket, etc) pointing to a blob, since these cannot be changed unless the site itself goes down. Additionally, it must be a raw link; clicking it should immediately download the file without user input. If you need help, I can store your mod in the repo directly (crediting you, of course).
+1. _Include a proper name/description/author/version_. `manifest.json` stores what your mod is named and its description. These fields should be filled out, and should describe your mod. Descriptions also support [Scribble formatting](https://www.jujuadams.com/Scribble/#/6.0/text-formatting), except for color.
+1. _Use the mod list [standards](#finding-mod-files)_. Your entire mod must either be a single `.md` or `.ini` file, or a folder containing one of the folder-based options. All file references must accept that the mod will be placed in the `mods/rmml` folder. If you need help converting a `.ini` mod or packing everything into a single directory, I can work with that.
+1. _Don't cause permanent damage_. Your mod should be able to be uninstalled without preventing Rusted Moss or another mod from working (unless it's a dependency). The only exception is save files: save files changed while your mod is installed are free game, but your impact should be minimized.
+1. _Have common human decency_. Don't make anything offensive, please. I am One Person doing this in their free time. If something is delayed or broken, please don't lash out at me or the official devs.

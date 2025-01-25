@@ -1,0 +1,31 @@
+---
+title: 'API and Technical'
+desc: "Technical details on how RMML works and its public API."
+order: 2
+---
+
+# Caching
+
+# `global.rmml_map`
+
+# `global.rmml.register`
+
+# Runtime
+
+Most of RMML's code is concerned with populating `global.rmml_map` as quickly as possible. However, something needs to read that map and actually run modded Event code. RMML's runtime has [changed](/rm-docs/rmml/changelog) [drastically](/rm-docs/rmml/design#rmml-runtime-history) between versions, so let's go over the latest.
+
+Rusted Moss runs modded Event code using Events that look like this.
+
+```gml
+// gml_Object_omod_controller_Create_0
+// check if the function exists
+if ds_map_exists(global.mod_map, "controller_events_create")
+{
+  // ensure `self` gets set to this Game Object
+  ds_map_find_value(global.mod_map, "controller_events_create").setSelf(self)
+  // call the stored function
+  ds_map_find_value(global.mod_map, "controller_events_create")()
+}
+```
+
+Each Event has its own key, based on the Game Object and Event names. `global.mod_map` is a `ds_map`, and maps these event keys to Catspeak function calls.

@@ -48,7 +48,7 @@ mod_2 = "With spaces.ini"
 mod_4 = NotLoaded.ini
 ```
 
-Because of [boring technical reasons](/rm-docs/modding/rmml#no-instance-sandboxing), you should only use one mod (`mod_0`) at a time. Each mod name references a `.ini` file in the `Mods` directory, so let's look at `sniper_bnuy.ini` for what they look like.
+Because of [boring technical reasons](/rm-docs/rmml/design#no-instance-sandboxing), you should only use one mod (`mod_0`) at a time. Each mod name references a `.ini` file in the `Mods` directory, so let's look at `sniper_bnuy.ini` for what they look like.
 
 # `sniper_bnuy.ini`
 
@@ -73,10 +73,16 @@ step = "if ..."
 
 If you want a more in-depth breakdown of this mod, check out the [Example Mod](/rm-docs/intro/bnuy) page.
 
+# To RMML or not to RMML
+
+[Rusted Moss Mod Loader](https://github.com/Harlem512/rm-mod-manager) (or RMML) is a mod created by me (Harlem512) to aid with developing, installing, and distributing mods. It comes with Rusted Moss Mod Manager (RMMM), a mod that lets you download mods off the [internet](https://github.com/Harlem512/rm-mod-database). My (completely unbiased) recommendation is to install Rusted Moss Mod Loader and use that instead of trying to use the "standard" modding tools.
+
+You can visit the [RMML Quickstart page](/rm-docs/rmml/quickstart) to get started with RMML.
+
 # Final Notes
 
 Modded Event code is run immediately when the Event for a particular Instance fires, and modded Game Objects don't implement any other behavior on their own. This means calling `event_inherited()` on your own.
 
-`controller` is a non-pausing, persistent Game Object that is created when the menu loads, and is destroyed when you return to the menu. Most of your code can live in this object, with other Instances accessed with clever `with` blocks.
+`controller` is a non-pausing, persistent Game Object that is created when the menu loads, and is **_destroyed_** when you return to the menu. Most of your code can live in this object, with other Instances accessed with clever `with` blocks. `instance` Instances don't pause (the Steam page lies).
 
-If you're doing serious modding work, I recommend [bypassing](/rm-docs/mose/mods#globalmod_map) the normal mod loading process using [Rusted Moss Mod Loader](/rm-docs/modding/rmml) or your own mod loader.
+If you're doing serious modding work, I recommend [bypassing](/rm-docs/mose/mods#globalmod_map) the normal mod loading process using [Rusted Moss Mod Loader](/rm-docs/rmml/quickstart) or your own mod loader.

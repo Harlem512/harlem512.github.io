@@ -17,6 +17,7 @@ export const shikiConfig: Partial<ShikiConfig> = {
   wrap: false,
   langAlias: {
     sp: 'catspeak',
+    jayspeak: 'catspeak',
     gml: 'GameMaker Language',
   },
   transformers: [transformerColorizedBrackets(), transformerMetaHighlight()],

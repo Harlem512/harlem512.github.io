@@ -44,7 +44,7 @@ while i < 10 {
 
 Catspeak limits execution time to one thousand milliseconds (one second), starting when you first enter Catspeak. For our purposes, this means that every Event we write must fully complete within that time frame.
 
-For almost all purposes, this is plenty of time. Most code is limited to 16ms anyway (the duration of one frame), so you'll only run into this limit if you're doing something bad (like trying to [build a mod loader](/rm-docs/modding/rmml)). However, just because a limit exists doesn't mean we need to follow it.
+For almost all purposes, this is plenty of time. Most code is limited to 16ms anyway (the duration of one frame), so you'll only run into this limit if you're doing something bad (like trying to [build a mod loader](/rm-docs/rmml/quickstart)). However, just because a limit exists doesn't mean we need to follow it.
 
 ````rmml
 # controller
@@ -68,7 +68,7 @@ TODO
 
 # Sprites
 
-GameMaker has a lot of support for Sprite manipulation. Almost anything you can do with Sprites in the editor you can do at runtime. However, there are GPU performance considerations for creating a lot of new Sprites. Each 
+GameMaker has a lot of support for Sprite manipulation. Almost anything you can do with Sprites in the editor you can do at runtime. However, there are GPU performance considerations for creating a lot of new Sprites. Each
 
 # Game Object Sadness
 
@@ -104,8 +104,6 @@ match self.type {
 ```
 ````
 
-[Rusted Moss Mod Loader](/rm-docs/modding/rmml) does this technique to isolate each mod, and has the same issues.
+Rusted Moss Mod Loader uses a [similar technique](/rm-docs/rmml/api#runtime) (a struct-based lookup table, on `self.mod_name`) to isolate each mod, and has the same issues.
 
 # Missing Events
-
-

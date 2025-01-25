@@ -6,9 +6,9 @@ order: 1
 
 # The Discord
 
-All mods are stored in the [official Discord](https://www.rustedmossgame.com) in the `# mod-share` channel. Many mods reference RMML or Rusted Moss Mod Loader, which is also available in the `# mod-share` channel.
+Most mods are stored in the [official Discord](https://www.rustedmossgame.com) in the `# mod-share` channel or in the [`rm-mod-database`](https://github.com/Harlem512/rm-mod-database) Github repository. Many mods reference RMML or Rusted Moss Mod Loader, which is also available in the `# mod-share` channel or [on Github](https://github.com/Harlem512/rm-mod-manager).
 
-Rusted Moss Mod Loader is required to use `.md` mods and is optional for `.ini` mods.
+Rusted Moss Mod Loader is required to use `.md` and `index.csv` mods and is optional for `.ini` mods. RMML also comes installed with RMMM, which greatly simplifies installing and managing mods.
 
 # Steam Directory
 
@@ -31,22 +31,10 @@ mod_0 = my_mod.ini
 
 # Rusted Moss Mod Loader
 
-[Rusted Moss Mod Loader](/rm-docs/modding/rmml) replaces the normal mod installation and loading process to fix [a few issues](/rm-docs/modding/rmml#why). RMML mods end with `.md`.
+[Rusted Moss Mod Loader (RMML)](/rm-docs/rmml/quickstart) replaces the normal mod installation and loading process to fix [a few issues](/rm-docs/rmml/design#pain-points). RMML comes with Rusted Moss Mod Manager, which lets you download mods from the [internet](https://github.com/Harlem512/rm-mod-database), manage your mod list, and automatically disables mods in the event of startup crash.
 
-Rusted Moss Mod Loader is installed like any other `.ini` mod, simply unzip `rmml_X_X.zip` into the `mods` folder, replacing `meta_info.ini`. After installing, mods are placed in the `mods/rmml` folder. To load a mod, open `modlist.txt` with a text editor and add the file name of the mod.
+RMML downloads are available in the `# mod-share` channel in the [official Discord](https://www.rustedmossgame.com) or [on Github](https://github.com/Harlem512/rm-mod-manager/releases). You install by unzipping `rmml_X_X.zip` into the `mods` folder, replacing `meta_info.ini`. After starting the game, you can use the gear icon on the menu to open the GUI and download other mods.
 
-```
-# put your mods here (or disable them with #)
-# mods are loaded (and run) in the order written here
-rmml_modlister.md
-ccw_shark.md
-cc_shark.md
+If you want to install a mod manually, place it in the `mods/rmml` folder (in either the Steam or saves directories) and either enable it with RMMM or add your mod (as a relative path from `mods/rmml`) to [`modlist.txt`](/rm-docs/rmml/quickstart#modlisttxt) in the `mods` folder.
 
-my_mod_here.md
-my_other_mod.ini
-your_mod_folder/mod_name.md
-```
-
-A few pitfalls you might run into:
-
-- Make sure you put the mod in the `mods/rmml` folder. The filenames are interpreted as file paths to a `.md` file, starting with the `rmml` folder. If you add `my_mod.md` to the modlist and put it in the `mods` folder (not `mods/rmml`), Rusted Moss Mod Loader can't find the mod.
+If you are using RMML, ***do not install other `.ini` mods or modify `meta_info.ini`***.

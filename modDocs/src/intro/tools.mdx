@@ -8,6 +8,17 @@ order: 3
 
 Code editors let you write code more efficiently than a normal text editor. While you *can* use Windows notepad, you really want something with line numbers and integrated access to the file system. The specific code editor you use doesn't really matter, but my recommendation is [Visual Studio Code](https://code.visualstudio.com/).
 
+## Syntax highlighting
+
+Naturally, you probably want pretty colors for your code editor. If you're using VS Code, you can use [my vsc-catspeak](https://github.com/Harlem512/vsc-catspeak) extension, which is also used by this site. TabularElf has a [highlighter](https://github.com/tabularelf/Catspeak-Notepad---Highlighter) for Notepad++ if that's better for you.
+
+````sp
+global.hello = fun(msg) {
+  show_message(msg)
+}
+global.hello("Howdy!")
+````
+
 # Undertale Mod Tool
 
 [Undertale Mod Tool](https://github.com/UnderminersTeam/UndertaleModTool) (UTMT or UMT) is a tool for inspecting the source code of Rusted Moss (and other GameMaker games). While you can use Undertale Mod Tool to make mods, we don't need to (and there are [boring technical reasons](/rm-docs/modding/limitations#decompilation) why we can't). I recommend reading [my docs](/rm-docs/intro/utmt) for more information.
@@ -30,4 +41,4 @@ The [official Discord](https://www.rustedmossgame.com) is probably the only Engl
 
 # Rusted Moss Mod Loader
 
-[Rusted Moss Mod Loader (RMML)](/rm-docs/intro/rmml) is a tool built by me. It solves a few [technical issues](/rm-docs/intro/rmml#why) with modding and generally makes everything easier. You can also use RMML as a working example of how to bypass the normal mod loading system.
+[Rusted Moss Mod Loader (RMML)](/rm-docs/rmml/quickstart) is a tool built by me. It solves a few [technical issues](/rm-docs/rmml/design#pain-points) with modding and generally makes everything easier. You can also use RMML as a working example of how to bypass the normal mod loading system.
