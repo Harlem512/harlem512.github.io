@@ -7,9 +7,9 @@ export const languageNames = {
   sp: 'Catspeak',
   catspeak: 'Catspeak',
   jayspeak: 'JaySpeak',
-  csv: "CSV",
+  csv: "index.csv",
   gml: 'GML',
-  rmml: 'RMML Mod',
+  rmml: '.md Mod',
   mini: 'INI File',
 } as const
 

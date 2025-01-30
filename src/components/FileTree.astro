@@ -1,0 +1,89 @@
+---
+import CodeFix from './CodeFix.astro'
+
+interface Props {
+  paths: string[]
+  basePath: string
+  highlightString?: string
+}
+
+type File = {
+  name: string
+}
+
+type Folder = File & {
+  sub_dir: (File | Folder)[]
+}
+
+function isFolder(ff: File | Folder) {
+  return 'sub_dir' in ff
+}
+
+const { paths, basePath, highlightString } = Astro.props
+
+const tree: Folder = {
+  name: basePath,
+  sub_dir: [],
+}
+
+// parse input paths
+for (const path of paths) {
+  const route = path.split('/')
+  let sub_dir = tree.sub_dir
+  route.forEach((r, index) => {
+    const isLast = index === route.length - 1
+
+    if (isLast) {
+      // filename
+      sub_dir.push({
+        name: r,
+      })
+    } else {
+      let ff = sub_dir.find((fileFolder) => fileFolder.name === r)
+      if (!ff) {
+        ff = {
+          name: r,
+          sub_dir: [],
+        }
+        sub_dir.push(ff)
+      }
+      if (!isFolder(ff)) throw new Error(`${ff}`)
+
+      sub_dir = ff.sub_dir
+    }
+  })
+}
+
+// render
+const tBend = '├── '
+const lBend = '└── '
+const up = '│   '
+const gap = '   '
+
+let code = ''
+function render(dir: Folder, padLeft: string, folderLeft: string) {
+  code += folderLeft + dir.name + '/\n'
+  dir.sub_dir
+    // sort by name
+    .sort(({ name: aName }, { name: bName }) => aName.localeCompare(bName))
+    .forEach((sub, index) => {
+      const isLast = index === dir.sub_dir.length - 1
+
+      if (isFolder(sub)) {
+        // recursive descent
+        render(
+          sub,
+          padLeft + (isLast ? gap : up),
+          padLeft + (isLast ? lBend : tBend),
+        )
+      } else {
+        // file
+        code += padLeft + (isLast ? lBend : tBend) + sub.name + '\n'
+      }
+    })
+}
+
+render(tree, '', '')
+---
+
+<CodeFix code={code} lang="tree" highlightString={highlightString} />

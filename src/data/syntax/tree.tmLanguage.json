@@ -1,0 +1,39 @@
+{
+  "comment": "Syntax highlighting for tree filesystem display",
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "displayName": "File Tree",
+  "name": "tree",
+  "scopeName": "source.tree",
+  "patterns": [
+    {
+      "include": "#slash"
+    },
+    {
+      "include": "#folder"
+    },
+    {
+      "include": "#file"
+    },
+    {
+      "include": "#lines"
+    }
+  ],
+  "repository": {
+    "folder": {
+      "match": "[a-zA-Z_0-9\\./]+(?=/)",
+      "name": "entity.name.function.tree"
+    },
+    "slash": {
+      "match": "/$",
+      "name": "comment.tree"
+    },
+    "file": {
+      "match": "[a-zA-Z_0-9\\./]+",
+      "name": "constant.numeric.tree"
+    },
+    "lines": {
+      "match": "└|─|├|│",
+      "name": "comment.tree"
+    }
+  }
+}

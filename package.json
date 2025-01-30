@@ -25,6 +25,7 @@
   "devDependencies": {
     "@shikijs/colorized-brackets": "^1.24.4",
     "@shikijs/transformers": "^1.24.4",
+    "@shikijs/types": "^2.2.0",
     "@types/leaflet": "^1.9.15",
     "postcss": "^8.4.49",
     "prettier": "^3.4.2",

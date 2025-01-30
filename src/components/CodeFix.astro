@@ -1,16 +1,34 @@
 ---
 import highlighter from '@/code/highlighter'
+import type { ShikiTransformer } from '@shikijs/types'
+import { parseMetaHighlightString } from '@shikijs/transformers'
 
 interface Props {
   code: string
   lang: string
   inline?: boolean
+  highlightString?: string | undefined
 }
 
-const { code, lang, inline = false } = Astro.props
+const { code, lang, inline = false, highlightString } = Astro.props
+
+function test(highlightString?: string): ShikiTransformer {
+  const lines = highlightString && parseMetaHighlightString(highlightString)
+
+  if (!lines) return {}
+
+  const lineSet = new Set(lines)
+
+  return {
+    line: (node, line) => {
+      if (lineSet.has(line)) node.properties.class = 'line highlighted'
+    },
+  }
+}
 
 const html = await highlighter.codeToHtml(code, lang, {
   inline,
+  transformers: [test(highlightString)],
 })
 ---
 

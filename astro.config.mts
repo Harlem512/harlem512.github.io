@@ -10,10 +10,11 @@ import catspeak from './src/data/syntax/catspeak.tmLanguage.json' assert { type:
 import gml from './src/data/syntax/gml.tmLanguage.json' assert { type: 'json' }
 import mini from './src/data/syntax/mini.tmLanguage.json' assert { type: 'json' }
 import rmml from './src/data/syntax/rmml.tmLanguage.json' assert { type: 'json' }
+import tree from './src/data/syntax/tree.tmLanguage.json' assert { type: 'json' }
 
 export const shikiConfig: Partial<ShikiConfig> = {
   theme: 'night-owl',
-  langs: [catspeak, rmml, gml, mini],
+  langs: [catspeak, rmml, gml, mini, tree],
   wrap: false,
   langAlias: {
     sp: 'catspeak',

@@ -381,7 +381,7 @@ pre[data-language='mini']::before {
 }
 
 pre[data-language='rmml']::before {
-  content: 'RMML Mod';
+  content: '.md Mod';
 }
 
 pre[data-language='sp']::before,
@@ -394,11 +394,15 @@ pre[data-language='jayspeak']::before {
 }
 
 pre[data-language='csv']::before {
-  content: 'CSV';
+  content: 'index.csv';
 }
 
 pre[data-language='gml']::before {
   content: 'GML';
+}
+
+pre[data-language='tree']::before {
+  content: 'Filesystem';
 }
 
 /* MARK: Images */

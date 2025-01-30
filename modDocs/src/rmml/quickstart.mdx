@@ -5,6 +5,7 @@ order: 0
 ---
 
 import CodeTable from '@/components/CodeTable.astro'
+import FileTree from '@/components/FileTree.astro'
 
 # Paid Shill
 
@@ -16,20 +17,22 @@ This article contains detail on how to install RMML and the basics for making mo
 
 RMML is available on the [rm-mod-manager](https://github.com/Harlem512/rm-mod-manager/releases) Github page. Download the latest release's `rmml_{VERSION}.zip` file, and unzip it into the Steam `mods` folder, replacing `meta_info.ini`.
 
-```
-mods/
-  rmml/
-    rmml.meow
-    rmmm.md
-  asset_list.ini
-  constant_list.ini
-  function_list.ini
-  meta_info.ini
-  method_list.ini
-  modlist.txt
-  rmml.ini
-  sniper_bnuy.ini
-```
+<FileTree
+  basePath="mods"
+  paths={[
+    'rmml/rmml.meow',
+    'rmml/rmmm.md',
+    'asset_list.ini',
+    'constant_list.ini',
+    'function_list.ini',
+    'meta_info.ini',
+    'method_list.ini',
+    'modlist.txt',
+    'rmml.ini',
+    'sniper_bnuy.ini',
+  ]}
+  highlightString='{7-11,5}'
+/>
 
 You can write mods using the "standard" `.ini` syntax or RMML's `.md` syntax (or [`index.csv`](/rm-docs/rmml/advanced#indexcsv)). Mods written with RMML installed should be placed in the `mods/rmml` folder and enabled with Rusted Moss Mod Manager in-game, or added to the [modlist](#modlisttxt).
 
@@ -50,7 +53,7 @@ RMML also uses the save folder for storing logs and other information. If you're
 
 # Rusted Moss Mod Manager
 
-RMML comes installed with Rusted Moss Mod Manager (RMMM). This mod lets you download mods off the [internet](https://github.com/Harlem512/rm-mod-database), manage your mod installation, and adds safety features. 
+RMML comes installed with Rusted Moss Mod Manager (RMMM). This mod lets you download mods off the [internet](https://github.com/Harlem512/rm-mod-database), manage your mod installation, and adds safety features.
 
 # `modlist.txt`
 
