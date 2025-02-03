@@ -44,7 +44,7 @@ The Game Objects with parents don't run their parent's code automatically. This 
 | `basic`     | `create`, `step`, `draw`                                                                                    |
 | `enemy`     | `create`, `destroy`, `step`, `draw`, `draw_end`, `alarm_0`, `user_0`, `user_1`                              |
 | `hitbox`    | `create`, `destroy`, `step`, `draw`, `alarm_0`, `alarm_1`\*, `user_0`, `user_1`, `animation_end`, `cleanup` |
-| `player`    | `create`, `step`, `step_end`, `draw`, `draw_end`, `draw_gui_end`, `alarm_0`, `animation_end`, `cleanup`     |
+| `player`    | `create`, `step`, `step_end`, `draw`, `draw_end`, `draw_gui_begin`, `alarm_0`, `animation_end`, `cleanup`     |
 
 The `hitbox` `alarm_1` Event probably [crashes](/rm-docs/modding/limitations#one-thousand-milliseconds) Catspeak, since it's the code that implements hitlag. Maybe don't use `event_inherited` on that one.
 
