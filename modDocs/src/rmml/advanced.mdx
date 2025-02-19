@@ -169,22 +169,22 @@ draw_sprite(global.my_sprite, 0, 0, 0)
 
 # Dev Mode
 
-RMML implements multiple safety features to prevent mods from crashing your game on start up, preventing you from accessing RMMM's UI. his is a list of changes Dev mode currently supports. You can implement your own Dev features in your own mods.
+RMML implements multiple safety features to prevent mods from crashing your game on start up, which would prevent you from accessing RMMM's UI. This is a list of changes Dev mode currently implements. You can implement your own Dev features in your own mods.
 
 - Exception handling for creating `controller`s and [game start scripts](#game-start-script)
 - Better line numbers for `.md` mods. Counting starts from the start of the file, instead of the start of the fence.
 - Mods are fully loaded when you return to the main menu, instead of loading from a cache.
 - RMMM resets the mod list if a startup crash (ie syntax or `room_start` error) is detected
 
-The easiest way to disable dev mode is with a game start script:
+The easiest way to enable dev mode is with a game start script:
 
 <CodeTable
   caption="Game Start Scripts"
   languages={['rmml', 'csv', 'mini']}
   entries={[
     [
-      '```\nglobal.rmml.dev = false\n```\n\n# controller\n...',
-      '\n,,"global.rmml.dev = false"\n...',
+      '```\nglobal.rmml.dev = true\n```\n\n# controller\n...',
+      '\n,,"do { global.rmml.dev = true }"\n...',
       'Unsupported :)',
     ],
   ]}
