@@ -42,3 +42,34 @@ Here's the issue.
 ```
 
 If you make Instances during a `controller`'s `create` Event, the `instance` `create` Event fails to run. To get around this, you can set an Alarm for one frame later, or use the `room_start` Event instead.
+
+# Using Data Structures as Booleans
+
+Can you spot the issue with this code? Your hint is that `global.save_data` is a `ds_map`.
+
+````rmml
+# controller
+## room_start
+```
+if !global.save_data {
+  return
+}
+-- do stuff if a save is loaded
+```
+````
+
+The problem is a sneaky combination of Catspeak's boolean coercion and function pointers. What we want is to quickly determine if `global.save_data` is a valid `ds_map` without calling `ds_exists`, so we abuse the default value (-1) as a boolean (false). Normally this works correctly with no issues, *however*, GameMaker can assign `0` as a data structure identifier, which is also a false value. The end result is a false negative; the save file is treated as if it doesn't exist, causing issues.
+
+How do we fix this? In the simple case, we can compare to `-1` instead, or just do it the right way.
+
+```sp
+-- compare to -1
+if global.save_data == -1 {
+  return
+}
+
+-- check if exists
+if !ds_exists(global.save_data, ds_type_map) {
+  return
+}
+```
