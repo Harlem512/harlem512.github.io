@@ -73,3 +73,28 @@ if !ds_exists(global.save_data, ds_type_map) {
   return
 }
 ```
+
+# Creating instances inside `with` blocks
+
+There's an issue with this code. Can you spot it?
+
+````rmml
+# controller
+## room_start
+```sp
+with self {
+  -- create an instance inside a `with` block
+  instance_create_depth(0,0,0, omod_instance)
+}
+```
+
+# instance
+## step
+```sp
+show_message("Never runs :c")
+```
+````
+
+Creating instances (of any kind) while inside a `with` block is a problem. In RMML 6, this causes an immediate crash and leads to all kinds of funny issues.
+
+This is resolved by [later Catspeak releases](https://github.com/katsaii/catspeak-lang/issues/145), however Rusted Moss still uses an affected version.
