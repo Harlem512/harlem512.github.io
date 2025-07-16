@@ -1,0 +1,23 @@
+---
+import Metadata from './Metadata.astro'
+
+const { frontmatter } = Astro.props
+---
+
+<Metadata title={frontmatter.title} description={frontmatter.description}>
+  <header>
+    <h1>{frontmatter.title}</h1>
+    <aside>{frontmatter.description}</aside>
+  </header>
+  <main>
+    <article class="md">
+      <slot />
+    </article>
+  </main>
+  <footer>
+    <aside>BLOG</aside>
+    <p>
+      A <a href='/'>Harlem512 Production</a>
+    </p>
+  </footer>
+</Metadata>

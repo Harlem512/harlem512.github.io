@@ -232,11 +232,6 @@ h1:target::before {
   body:has(nav) {
     margin-left: var(--nav-width);
   }
-
-  footer {
-    left: var(--nav-width);
-    border-left: var(--border-thickness-block) solid var(--color-nav-border);
-  }
 }
 
 /* Mobile */
@@ -269,6 +264,7 @@ nav {
   background: var(--color-nav-bg);
   overflow-y: hidden;
   scrollbar-gutter: stable;
+  z-index: 10;
 }
 
 @media (hover: none) {

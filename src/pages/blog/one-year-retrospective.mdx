@@ -1,0 +1,110 @@
+---
+layout: "@/layouts/Blog.astro"
+title: "One Year Modding Retrospective"
+description: "365 days of modding condensed into one article."
+---
+
+# Hello
+
+Hello. One year ago today (July 16 2025) Rusted Moss added [Catspeak modding support](https://store.steampowered.com/news/app/1772830/view/4380396738331447015) to the game. Since then I've made a lot of cool stuff for the game, including an [interactive map](/rm-map.html), an [in-game mod manager](https://github.com/Harlem512/rm-mod-manager), a [multiplayer mod](https://store.steampowered.com/news/app/1772830/view/514084814784036874), and a whole lot else. We have over a hundred (~200 at the time of writing) downloads of the mod loader across all versions, with the biggest mods having over a hundred downloads. None of it would be possible without this modding support (or the moral support from the community), and I want to talk about that.
+
+# `whoami`
+
+Before continuing, I want to provide some background. A year ago, I was a "lurker", someone who reads chats but does not post. I became active as a result of my success with modding and built most of what exists without outside help, to my own detriment. I have also been programming for a long time, long enough to be [completely disconnected](https://xkcd.com/2501/) from the average person. This article isn't trying to be technical and I will keep the jargon to a minimum.
+
+I also want to clarify that I'm not alone here. Other modders exist and most of my ideas have trivial origins or are "inspired" by other people's ideas.
+
+I also want to maintain perspective. 200 downloads in software terms is almost nothing, a rounding error. But in absolute terms, 200 is a lot. 100 is a lot, 10 is a lot. The fact that anyone has played with or read about or done anything with the modding support is a miracle, and deeply humbling.
+
+But lets start at the beginning.
+
+# Minify
+
+When modding support was initially added, I was still working through the newly released DLC content, specifically Maya mode and the Great Climb. I saw the Steam post and knew that I would probably mess with modding eventually, but decided to wait. When I did get around to modding (a few weeks after the update), I was mildly surprised to see very little activity (2 modders posting). Intuitively, this makes sense; modding is already a fraction of the playerbase, and only a small fraction of modding players are modding developers. Undeterred, I dove into what little information existed and got to work. My plan was to implement a mod idea by another user, which eventually became [Minify](https://github.com/Harlem512/rm-mod-database#minify). Naturally, I was immediately met with problems.
+
+# Problems
+
+We'll talk about it more later but Rusted Moss's modding support is, to be harsh, not very good. While it is extremely powerful in the right hands and has a lot of flexibility, it provides nothing in terms of developer tools and has several critical flaws. The first of these is the mod structure itself, a problem that seemed initially easy.
+
+Because of [boring technical reasons](/rm-docs/rmml/design/#coding-in-one-line), all Rusted Moss modded code must fit into a single line. Rather than give up or work within the bounds, I immediately tried breaking it. My initial plan was some [boring technical nonsense](/rm-docs/rmml/design/#history) that provided a starting point for finding the other two big issues.
+
+The [other](/rm-docs/rmml/design/#no-instance-sandboxing) [two](/rm-docs/rmml/design/#one-function-per-event) issues are quite technical, however together they make multi-mod compatibility impossible. In essence, only one mod could be installed at once. This is bad, like "modding is dead" bad. Of course, Rusted Moss modding is active, so what happened?
+
+# Rusted Moss Mod Loader
+
+One of the first things I did with the modding support was to try and bypass Rusted Moss's internal mod loading mechanisms. My hope was that I could load external code, which would let me get around the single line requirement. Eventually, I figured out how to load my own Catspeak code, which allowed me to bypass Rusted Moss's mod loading completely. With some [extra code](https://github.com/Harlem512/rm-mod-manager/blob/main/legacy/rmml-1.md) to fix the other two issues, RMML v1 was born.
+
+Concurrent with RMML v1, I finished up Minify and released both to the Discord. At this point I was hooked. Rusted Moss had shown itself to be a complex problem, the exact thing I was looking for. And we were just getting started.
+
+# The Map
+
+Another Discord user had a crazy idea: a map of the game using in-game images. Because I'm a programmer, I thought they had some automated script and I wanted to know how it worked. To my surprise, they were taking screenshots manually. This successfully [nerd-sniped](https://xkcd.com/356/) me, and I decided to make a mod to automatically take screenshots (looking back, this could have been taken the wrong way. I didn't want to replace their work, just make it easier for them to complete).
+
+After several iterations of the mod, it eventually escalated into a utility to take automated screenshots of every room in the game. At this point, Katsaii, the author of modding support, planted the seeds of evil: "this could be used to make an interactable (sic) map website". Work on that map occurred in the background, but really picked up in November 2024.
+
+My main takeaway from the interactive map is that a "good enough" result is good enough for 90% of use cases. My initial plans for the map back in September were way more ambitious, and while they would've made for a better end product it would've taken significantly longer. And likely never would've finished.
+
+Despite this, the map has provided again and again to be useful. I use it all the time for remembering room layouts and the look of the map, if you have the drive and find a game that doesn't have one I highly recommend making one.
+
+# Maya Palette
+
+Around when Maya was revealed, many Rusted Moss players asked the question: "will you be able to change the palette colors?" And sadly, the answer was no. From the developers, at least. Maya Palette (the mod) helped find issues with RMML and was hugely popular.
+
+Later on, Maya Palette inspired Ameli Palette which does the same for Ameli.
+
+# A Mod Manager
+
+A few months passed, and it became clear to me that RMML in its current state was beginning to be unmanageable for non-technical users. Each mod had to be managed manually using the Steam install folder and modifying a text file. In January, I finally had enough. It was time for the Future.
+
+Rusted Moss Mod Manager is an in-game mod manager for Rusted Moss made by me and handles installing, updating, and enabling mods with a clean user interface. Alongside it came RMML v6, providing stability and performance improvements.
+
+It's been about 6 months (wow) since its initial release, and it's been hugely successful. Modding got the first official shoutout by the developers. The devs have been very active in providing moral support and bug fixes in the Discord the entire time, but this was the first time modding was broadcast to non-Discord members.
+
+# The Impossible: Multiplayer
+
+The last mod I want to mention is Ghost MP, the multiplayer mod. I initially wrote it off as impossible, but after being revealed some dark arts I revisited the idea and got it working.
+
+Ghost MP is the second most popular mod by downloads, behind only Mr L's Archipelago client. While Ghost MP isn't perfect, I do think it's about the best we can get without being very invasive to Rusted Moss's code. It would be nice to interact with other players more, but its just too complex.
+
+# The Rest
+
+We'll go rapid-fire through the rest of my (published) mods, in (rough) order of release.
+
+- ***Puntable***: Inspired by a meme conversation in the Discord about the dog kicker NPC. I saw someone using it in the Archipelago Discord and was shocked someone would actually use it.
+- ***Pursuit***: Mod from a meme. It's not very good, but its a lot of fun to mess around with.
+- ***Minimap***: This was initially made for a scrapped video idea. I wanted a way to easily show where the player was, and it turned into a real mod that could be released.
+- ***Checklist***: Built using a script using data gathered when making the interactive map.
+- ***Gimmick***: An April Fools mod. I really liked making it, and its good practice for adding new characters. Not that I have any plans.
+- ***Speedrun Timer Control***: 
+- ***Grapple Preview***: A "commission" mod for RepentMF. I got nerdsniped again, smh.
+- ***More Saves***: The UI is clean and its super functional. Probably the second most useful mod I've made (excluding RMML/RMMM).
+
+# The Mod Docs
+
+Almost done now. I've also written a lot of documentation on how to mod Rusted Moss. While its better than nothing, it'll probably remain in an unfinished state. When I wrote it, I still held hope that RMML wouldn't be as influential as it became, so most of the introduction assumes you're using the normal modding support (which is harder to use).
+
+It's still a good reference though, I use it a lot for event names and helping to remember stuff. My new (modding) years resolution is to add more stuff.
+
+# A Big Fish
+
+We're done with the details on what I've made, its time for the reflection stuff. I want to start with my role in the story.
+
+It is impossible to discuss Rusted Moss modding seriously without mentioning RMML or RMMM. While both tools provide a lot of value to the modding community, ultimately they're products of someone who knows a lot about programming. Without me, modding would still exist but it would be very different.
+
+I also exert a lot of "pressure" on the modding scene. I am very active and make a lot of mods, in some ways can be daunting. If someone else was working on a version of Maya Palette or RMML, they've been eclipsed by my own mod. In a community as small as Rusted Moss, this is unlikely but it is worth thinking about.
+
+I also got here from a lot of coincidences. Modding support was added at a good time, and right as I got started there were a few updates that made RMML possible. I also wouldn't been lurking in the Discord at all if the speedrun competitions didn't exist. If I hadn't stolen a good idea or someone else made it first, I might not have made anything at all. If RMML wasn't required, I might have lost interest.
+
+# About Rusted Moss
+
+This next part is very harsh, sorry. I mentioned it earlier, but I don't think the modding support is very good. It has multiple critical flaws and the documentation provided is contradictory and incomplete. Installing mods is tedious and annoying, especially the initial version. Put together, modding arrived in a bad state.
+
+I think that for many people, this would turn them off completely. Most people are normal and aren't going to try and circumvent the issues of the system, they'll just move on to something else. Despite this, I don't believe that "Harlem512 saved modding !!" as much as "RMML needs to exist for the modding support to work". It didn't have to be me, and it didn't have to be RMML, but those issues did need to be fixed.
+
+On the other hand, modding support is a bonus feature to an already complete game. Expecting a fully-formed modding api is a bit unrealistic, especially given the player numbers. Developing in the real world isn't free, and if most players had to choose between the Winter DLC or RMMM, I think most would choose the Winter DLC. Plus, they've already got a dedicated person (me) doing the hard part for them :).
+
+# The Future
+
+That's a lot of words. But what's next? I intend to support my mods into the indeterminate future, but beyond that I don't know. This is my hobby, and my hobbies don't like strict schedules. Maybe I'll finish the interactive map, or the modding documentation, or [REDACTED]. Or maybe it'll be something new, like [REDACTED] or [REDACTED]. Or maybe you never hear from me again.
+
+Keep your friends close and your best friends closer.
