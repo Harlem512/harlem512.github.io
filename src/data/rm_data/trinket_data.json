@@ -1,0 +1,229 @@
+[
+  [
+    "Incendiary essence",
+    "Bullets do additional damage",
+    "Blessing of a molten fae. \"I remember buildings burning.\"",
+    "Applies 1.3 damage multiplier to all attacks except Stick Grenade (Fern or Maya)."
+  ],
+  [
+    "Tattered blindfold",
+    "Hides UI",
+    "Blessing of a feral fae. \"Accept this challenge.\""
+  ],
+  [
+    "Giant chambers",
+    "Fully charged bullets do 30% extra damage",
+    "Blessing of a large fae.",
+    "Applies 1.25 damage multiplier to fully charged attacks.<hr>Fern: Rail (fully charged) and Pistol saws (including with Energy Converter).<br>Maya: Charged slash and charged variants of Summon Saw (including with Energy Converter), Quick Draw, and Execution Technique.<br>Ameli: #4 (always) and charged variant of #1 and #5"
+  ],
+  [
+    "Magnet",
+    "Money attracts toward you",
+    "A magnet made of intertwined rocks.",
+    "Money within 184 pixels of the player is attracted to the player."
+  ],
+  [
+    "Ruby slippers",
+    "Run faster",
+    "Shoes infused with magic.",
+    "Increases horizontal movement speed and acceleration. Top speed listed below in pixels per frame.<hr>Fern: 2.46 -> 2.88 (+17%)<br>Maya: 2.91 -> 3.33 (+14%)<br>Ameli: 2.69 -> 3.10 (+15%)"
+  ],
+  [
+    "Fairy ointment",
+    "Makes green particles when there's a secret in the room",
+    "Blessing of a sensitive fae. \"I can feel the world spinning.\"",
+    "Green particles detect lore boxes and all non-weapon pickups."
+  ],
+  [
+    "Energy refiner",
+    "Gain MP by grappling enemies",
+    "Small fairy that lives off energy.",
+    "Grappling an enemy for 76 frames (about 2 seconds) provides 9 MP (about 1 heal)."
+  ],
+  [
+    "Lucky clover pearl",
+    "Some enemy bullets turn into non-damaging flowers",
+    "Blessing of a transcendent fae. \"I remember a strange tower.\"",
+    "Most enemy attacks have a 40% chance to become non-damaging."
+  ],
+  [
+    "Time manipulator",
+    "Slower enemy bullets",
+    "Blessing of a transparent fae. \"I remember some of the future.\"",
+    "Most enemy attacks move 30% slower."
+  ],
+  [
+    "Spiced gunpowder",
+    "Longer bullet range",
+    "Blessing of a long fae.",
+    "Attacks except Stick Grenade (Fern or Maya) and Maya slashes move 14% faster and last 15% longer. Overall 31% range increase. Maya slashes are 30% longer."
+  ],
+  [
+    "Powdered fae silver",
+    "Much longer bullet range",
+    "Blessing of a very long fae.",
+    "Attacks except Stick Grenade (Fern or Maya) and Maya slashes move 30% faster and last 30% longer. Overall 69% range increase. Maya slashes are 60% longer."
+  ],
+  [
+    "Sprite's breath",
+    "Deal contact damage while moving fast",
+    "Blessing from a dangerous fae. \"Let no one stand in your way.\"",
+    "Attack deals 32 base damage (scales with bonus damage) and prevents normal enemy contact damage when moving quickly.<hr>Moving 5.6 pixels in a single frame triggers attack for 16 frames (can be reapplied). Vertical movement is 37% less effective for the distance calculation (read: you need to move faster vertically)."
+  ],
+  [
+    "Wing clipper",
+    "Pressing down in the air lets you fall fast",
+    "Blessing of a heavy fae. \"I remember losing my wings.\"",
+    "Pressing down while moving upwards or slowly (<2.8 pixels/frame) downwards sets downward velocity to 2.8 pixels/frame downwards. Doesn't work when grappling. Adds 0.1 horizontal velocity in the direction of input."
+  ],
+  [
+    "Powdered nightshade",
+    "Grenades deal extra damage over time",
+    "Blessing of a toxic fae. \"You'll get over it.\"",
+    "Deals 0.07 damage per frame for 300 (200 with Dandelion Bomb) frames (21 or 14 damage). Does not scale with damage modifiers. Only applies to Sticky Grenade (Fern or Maya)."
+  ],
+  [
+    "Cracked monocle",
+    "Gateways emit a soft light and see data about foes",
+    "Blessing of a synthetic fae. \"I remember sleeping in a machine.\"",
+    "Room transitions emit light and shows HP values of enemies."
+  ],
+  [
+    "Magnetic bullets",
+    "Bullets home toward enemies",
+    "Blessing of an magnetic fae.",
+    "Bullets curve towards enemies within 90 pixels of them."
+  ],
+  [
+    "Thorny rose",
+    "Deal 50% more damage at low HP",
+    "Blessing of a crimson fae, feeds off your blood.",
+    "If HP is less than or equal to 4, attacks except Stick Grenade (Fern or Maya) deal 60% more damage, move 10% faster, and last 10% longer (overall 21% range increase)."
+  ],
+  [
+    "Rusted coin",
+    "More money drops",
+    "Blessing of a wealthy fae.",
+    "Money is 50% more valuable."
+  ],
+  [
+    "Cleansing charm",
+    "Survive in ichor and water for longer",
+    "Blessing of an inverted fae, \"I remember seeing the abyss.\"",
+    "Survive 45% longer in ichor (both types) and water."
+  ],
+  [
+    "Erosive bullets",
+    "Bullets deal extra damage over time",
+    "Blessing of a rusted fae. \"I remember being old.\"",
+    "Deals 0.07 damage per frame for 60 frames after an attack (except Stick Grenade for Fern/Maya) connects. Can be refreshed. Does not scale with damage modifiers."
+  ],
+  [
+    "Guardian fae",
+    "Healing creates a protective shield",
+    "Blessing of an protective fae. \"I remember something else being here.\"",
+    "Shield has 300 \"HP\" and loses 1.3 HP every frame (230 frames total or almost 4 seconds). Enemy bullet contact deals 15.3 HP (20 total hits)."
+  ],
+  [
+    "Cricket bone whip",
+    "Grapple destroys basic bullets",
+    "Blessing of a fae coachman. \"I stole this.\"",
+    "Has a 110 frame (about 2 seconds) cooldown."
+  ],
+  [
+    "Dandelion bomb",
+    "Grenade power increases with its airtime",
+    "Blessing of a shattered fae. \"I remember explosions.\"",
+    "Reduces base grenade damage by 8%. Grenade damage increases by 1.3% (exponentially) per frame.<hr>Poison duration increases by 1 frame every 2 frames of travel time with Powdered Nightshade."
+  ],
+  [
+    "HP overload",
+    "Extra damage/range while at full HP",
+    "Blessing of a fae dripping with health.",
+    "Attacks except Stick Grenade (Fern or Maya) deal 13% extra damage, move 12% faster, and last 2% longer (overall 14% range increase)."
+  ],
+  [
+    "Heavy ammo",
+    "Shooting pushes you back a little",
+    "Blessing of a tungsten fae.",
+    "Pushes the player backwards when attacking with Fern's weapons or Maya's slashes."
+  ],
+  [
+    "Short fuse",
+    "Double tap the heal button to cause an explosion (requires mana)",
+    "Blessing of a fae filled with mana.",
+    "Deals damage when healing (Fern) or after parrying (Maya). Damage scales with attack modifiers and gun level.<hr>Fern: 80 base damage<br>Maya: 27 base damage"
+  ],
+  [
+    "Thorny wings",
+    "Extra damage when airborne for awhile",
+    "Blessing of a violent sylph. \"Reject the ground.\"",
+    "When in the air for 70 frames (about 1 second), attacks except Stick Grenade (Fern or Maya) deal 30% more damage, move 15% faster, and last 15% longer (overall 32% range increase)."
+  ],
+  [
+    "Maya's trinket",
+    "Makes you sentimental about the past",
+    "A macaroni necklace you made for Maya as a gift.",
+    "Required for Endings B and C."
+  ],
+  [
+    "Fern's trinket",
+    "...",
+    "A drawing Maya made for you as a gift.",
+    "Required for Ending B."
+  ],
+  [
+    "Fae of love",
+    "A bullet-blocking fairy orbits you",
+    "Blessing of a happy fae. \"I imagine a garden.\"",
+    "Destroys most enemy attacks."
+  ],
+  [
+    "Fae of hate",
+    "A damage-dealing fairy orbits you",
+    "Blessing of an angry fae. \"I smell betrayal.\"",
+    "Deals 10 base damage every 10 frames, scaling with damage trinkets."
+  ],
+  [
+    "Fae of glass",
+    "Everything kills you in 1 hit",
+    "Blessing of a fragile fae. \"I remember being afraid.\"",
+    "HP Overload and Thorny Rose are always active. Ameli's broom functions normally."
+  ],
+  [
+    "Titania's Protection",
+    "Very powerful spell. Destroys nearby bullets when hit.",
+    "Blessing from Titania. \"Please stay safe on your journey\"",
+    "Increases the range bullets are destroyed when hit by ~100%."
+  ],
+  [
+    "Energy Disruptor",
+    "Changes the behaviour of the Rail.",
+    "Small fae capable of bending the energy and material close to it.",
+    "<hr>Fern: Rail fires in bursts<br>Maya: Sticky Grenade turns into a ball and can be launched with attacks"
+  ],
+  [
+    "Energy Converter",
+    "Changes the behaviour of the Pistol.",
+    "Small fae capable of bending energy into saws.",
+    "<hr>Fern: Pistol launches saws that attach to terrain<br>Maya: Summon Saw creates a saw that hovers around the player"
+  ],
+  [
+    "Soft fae",
+    "Lets you bounce off pistol saws",
+    "Blessing of a fluffy fae. \"Do not get in harms way.\"",
+    "Pistol and Summon Saw saws can be bounced on. Has a 73 frame (over 1 second) cooldown."
+  ],
+  [
+    "Glass Coin",
+    "Picking up money increases damage. Effect resets when hurt.",
+    "Blessing of a greedy fae. \"I bribe both the pen and the sword.\"",
+    "Attacks except Stick Grenade (Fern or Maya) deal 12.5% to 100% more damage depending on money collected.<hr>Deal 12.5% extra damage at 1 money, increasing by 2.5% per additional money. Caps at +100% damage at 30 money (29 money gives 82.5% damage). Resets when taking damage, loading a save, or entering boss rush."
+  ],
+  [
+    "Mossy wings",
+    "Healing mid-air refreshes the grapple.",
+    "A tired fae covered in moss.",
+    "Healing, parrying (even unsuccessfully), and using Ameli clone refreshes the grapple. Can be used while grappling."
+  ]
+]

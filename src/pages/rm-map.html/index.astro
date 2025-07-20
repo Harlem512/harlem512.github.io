@@ -6,6 +6,7 @@ import mapClimb from '@/data/rm_data/map_climb.json'
 import mapLibrary from '@/data/rm_data/map_library.json'
 import mapMain from '@/data/rm_data/map_main.json'
 import roomData from '@/data/rm_data/room_data.json'
+import trinket_data from '@/data/rm_data/trinket_data.json'
 import type {
   AllData,
   BBox,
@@ -120,6 +121,15 @@ for (const [
 
   const { leafletX, leafletY, leafletWidth, leafletHeight } = mapPosition
 
+  const bonus =
+    roomName === 'rm_forest_to_cata_1'
+      ? '<br>142 341' // face stealer
+      : roomName === 'rm_underhang_tunnel_start'
+        ? '<br>314 24' // elfhame
+        : roomName === 'rext_hard_mode_check'
+          ? '<br>421 3241' // hard mode
+          : ''
+
   allData.rooms.push([
     leafletX / 256,
     leafletY / 256,
@@ -128,7 +138,7 @@ for (const [
     (leafletWidth - room_width) / 256,
     (leafletHeight - room_height) / 256,
     color_id,
-    `${roomName} (${id})<br>[${map_x},${map_y}]`,
+    `${roomName} (${id})<br>[${map_x},${map_y}]${bonus}`,
   ])
 
   const bbox = ({ right, bottom, left, top }: InputBBox): BBox => [
@@ -222,7 +232,7 @@ for (const [
       ...data.upgrade.map<UrlMarker>(({ type, ...coord }) => [
         ...point(coord),
         type,
-      ])
+      ]),
     )
   }
   // guns
@@ -231,7 +241,7 @@ for (const [
       ...data.gun.map<UrlMarker>(({ index, ...coord }) => [
         ...point(coord),
         `gun${index + 1}`,
-      ])
+      ]),
     )
   }
 
@@ -251,15 +261,22 @@ for (const [
   }
 }
 
+const TRINKET_TOOLTIPS = JSON.stringify(
+  trinket_data.map(
+    ([name, description, fae, stats], i) =>
+      `<b>${name} (${i})</b><br><i>${fae}</i><hr>${description}.${stats ? `<br><i>${stats}</i>` : ''}`,
+  ),
+)
+
 const ALL_DATA = JSON.stringify(allData)
 ---
 
 <style is:global>
   html,
   body {
-    height: 100%;
-    padding: 0;
     margin: 0;
+    padding: 0;
+    height: 100%;
   }
 
   #map {
@@ -284,11 +301,13 @@ const ALL_DATA = JSON.stringify(allData)
   description='An interactive map for Rusted Moss'
   image='/rm-map.png'
 >
-  <div id='map' data-mapdata={ALL_DATA}></div>
+  <div id='map' data-mapdata={ALL_DATA} data-trinkettooltips={TRINKET_TOOLTIPS}>
+  </div>
   <script>
     import L from 'leaflet'
     import type { AllData, BBox, Point, UrlMarker } from '@/data/rm_data/types'
 
+    const mapDataset = document.getElementById('map')?.dataset!
     const {
       rooms,
       transition,
@@ -308,9 +327,9 @@ const ALL_DATA = JSON.stringify(allData)
       upgrade,
       boss,
       colors,
-    }: AllData = JSON.parse(
-      document.getElementById('map')?.dataset.mapdata ?? ''
-    )
+    }: AllData = JSON.parse(mapDataset.mapdata!)
+
+    const trinketTooltips: string[] = JSON.parse(mapDataset.trinkettooltips!)
 
     const TILE_SIZE = 512
     // largest {z} zoom
@@ -344,7 +363,7 @@ const ALL_DATA = JSON.stringify(allData)
           [0, WIDTH],
           [HEIGHT, 0],
         ],
-      }
+      },
     ).addTo(map)
 
     // popup
@@ -364,7 +383,7 @@ const ALL_DATA = JSON.stringify(allData)
           fill: true,
           fillOpacity: 0,
           weight: 1,
-        }
+        },
       )
         .addTo(roomBorders)
         .bindPopup(popup)
@@ -391,7 +410,7 @@ const ALL_DATA = JSON.stringify(allData)
           fill: true,
           fillOpacity: 0.1,
           weight: 1,
-        }
+        },
       ).addTo(internalRoomBorders)
     }
     // adding the layer enables it by default
@@ -409,7 +428,7 @@ const ALL_DATA = JSON.stringify(allData)
           {
             color: color,
             weight: 1,
-          }
+          },
         ).addTo(layer)
       }
       return layer
@@ -430,16 +449,28 @@ const ALL_DATA = JSON.stringify(allData)
     }
 
     // index marker
-    function addIndexMarker(points: Point[], prefix?: string) {
+    function addIndexMarker(
+      points: Point[],
+      prefix?: string,
+      tooltips?: string[],
+    ) {
       const layer = L.layerGroup()
-      points.forEach(([x, y], i) =>
-        L.marker([x, y], {
+      points.forEach(([x, y], i) => {
+        const marker = L.marker([x, y], {
           icon: L.icon({
             iconUrl: `/rm-icons/${prefix}${i}.png`,
             iconAnchor: [16, 39],
           }),
-        }).addTo(layer)
-      )
+        })
+
+        if (tooltips) {
+          marker
+            .bindPopup(popup)
+            .addEventListener('click', () => popup.setContent(tooltips[i]!))
+        }
+
+        marker.addTo(layer)
+      })
       map.addLayer(layer)
       return layer
     }
@@ -475,14 +506,14 @@ const ALL_DATA = JSON.stringify(allData)
           HP: addPoint(hp, 'hp'),
           Lore: addPoint(lore, 'lore'),
           MP: addPoint(mp, 'mp'),
-          Trinket: addIndexMarker(trinket, 'trinkets'),
+          Trinket: addIndexMarker(trinket, 'trinkets', trinketTooltips),
           'Special Locations': addUrlMarker(other),
           Upgrades: addUrlMarker(upgrade),
           'Room Transitions': addBBox(transition, '#19CF4D'),
           Arenas: addBBox(arena, '#D0B507'),
           'Death Pits': addBBox(pit, '#A5290C'),
           'Room Bounding Box': internalRoomBorders,
-        }
+        },
       )
       .addTo(map)
   </script>
