@@ -21,3 +21,4 @@ You'll need [Node.JS](https://nodejs.org/en). Then run `npm run build`, which cr
 - [GML tmLanguage syntax by Butterscotch Shenanigans](https://github.com/bscotch/stitch/blob/7dbc23c13341713a566e357f41084132d4d3593a/packages/vscode/syntaxes/gml.tmLanguage.json) (`src/data/gml.tmLanguage.json`)
 - Map icons based on Rusted Moss's sprites (`public/rm-icons/*`)
 - Parts of Rusted Moss's decompiled code base
+- Sprites based on [absolutespiceball](https://www.curseforge.com/minecraft/texture-packs/tfc-anvil-helper)'s TFC anvil helper

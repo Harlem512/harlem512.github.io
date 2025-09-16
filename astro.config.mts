@@ -4,6 +4,7 @@ import sitemap from '@astrojs/sitemap'
 import { transformerColorizedBrackets } from '@shikijs/colorized-brackets'
 import { transformerMetaHighlight } from '@shikijs/transformers'
 import type { ShikiConfig } from 'astro'
+import react from '@astrojs/react'
 import { defineConfig } from 'astro/config'
 import rehypeExternalLinks from 'rehype-external-links'
 import catspeak from './src/data/syntax/catspeak.tmLanguage.json' assert { type: 'json' }
@@ -27,7 +28,7 @@ export const shikiConfig: Partial<ShikiConfig> = {
 // https://astro.build/config
 export default defineConfig({
   site: 'https://harlem512.github.io',
-  integrations: [sitemap(), mdx()],
+  integrations: [sitemap(), mdx(), react()],
   markdown: {
     shikiConfig,
     rehypePlugins: [[rehypeExternalLinks, {}]],
