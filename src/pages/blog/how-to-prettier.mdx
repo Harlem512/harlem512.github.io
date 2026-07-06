@@ -1,0 +1,599 @@
+---
+layout: '@/layouts/Blog.astro'
+title: 'How 2 Prettier Plugin'
+description: 'Some ramblings on code formatting, Prettier plugins, and AI.'
+written: '2026-07-05'
+---
+
+import FileTree from '@/components/FileTree.astro'
+
+# Hello
+
+Hello. My latest project has been a [VSCode extension](https://github.com/Harlem512/prettier-plugin-catspeak) for formatting [Catspeak](https://github.com/katsaii/catspeak-lang) files using a custom [Prettier](https://prettier.io/) Plugin, and I have some thoughts to ex**o**rcise about the experience. So here's some ramblings on how to make a code formatter, from someone with no experience making code formatters.
+
+# Background
+
+Most of this article assumes you are already familiar with Javascript/Typescript and a vague grasp of Catspeak's syntax. If you've used one of them then they should look similar, and if you've used neither then they're all C-like languages. If you've never programmed before, then just let it wash over you and feel the vibes.
+
+# `whatis formatter`
+
+A code formatter is a complex tool with a simple job: convert sloppy code into code that matches some consistent style guide. There's a lot of ways to make them and they're all pretty complicated. The general idea (at least for Prettier) is to take your code, split the code into Tokens for easier parsing, generate an Abstract Syntax Tree (or AST, rhymes with Fast), convert the AST into some intermediate Document representation, then run a line-breaking algorithm on the result.
+
+```
+Code
+  --Lexer--> Tokens
+  --Parser--> AST
+  --Printer--> Document
+  --Algorithm--> Formatted Code
+```
+
+There's a lot of libraries that do some or all of these steps, and I decided to use a Prettier Plugin (which handles the Algorithm and parts of the Printer) and hand-write the Lexer and Parser. In retrospect, this choice worked well and I would use Prettier again, but there are probably faster Lexer and Parser options.
+
+But wait a minute, what even **_IS_** a formatter?
+
+# `noseriously whatis formatter`
+
+The main problem with formatting is the humble line break. As an example, here is some poorly-formatted Catspeak code.
+
+```sp
+let x={value:123,my_func:fun(a,b){let c=a*b return c*b}}
+```
+
+This is clearly dumb and bad and should be formatted, but where do you put linebreaks? And what about spaces between statements?
+
+A naive implementation that takes each Token and prints them in-order could enforce certain line breaks (such as before braces and after commas in braces), and this works reasonably well.
+
+```sp
+let x = {
+  value: 123,
+  my_func: fun (a, b) {
+    let c = a * b
+    return c * b
+  }
+}
+```
+
+But it still has some limitations.
+
+```sp
+-- we might want this on one line
+let short_struct = {
+  a: 123
+}
+
+-- commas after struct entries are optional in Catspeak, so we don't know to print a line break (or how to detect if we should print a comma)
+let other_struct = {
+  value: 123 my_func: fun (a, b) {
+    return a + b
+  }
+}
+
+-- clearly bad
+my_func(a, some_really_long_expression + that_looks_bad_and + should_probably_cause_come_kind_of_wrapping_or_something, b)
+```
+
+What we really want is some way to detect that some printed block of code _would_ wrap, then backtrack and wrap before that becomes a problem.
+
+```sp
+my_func(
+  a,
+  some_really_long_expression + that_looks_bad_and
+    + should_probably_cause_come_kind_of_wrapping_or_something,
+  b
+)
+```
+
+And all of this ignores comments or significant whitespace (such as empty lines between statements or in array/struct entries).
+
+```sp
+call_a()
+
+-- line break above should be preserved
+call_b()
+```
+
+Thankfully for us, we live in [current year] and AST-based code formatters (that use context about what type of language construct is being printed) have been standard practice for decades. [Prettier itself](https://archive.jlongster.com/A-Prettier-Formatter) is almost 10 years old, and the [paper its based on](https://homepages.inf.ed.ac.uk/wadler/papers/prettier/prettier.pdf) (by Philip Wadler) was written in the late 90s, and _that_ paper is based on the work of earlier papers from the 80s. Rather than re-invent the wheel and descend into madness, we can use pre-existing solutions. So let's get started.
+
+# Making a Plugin
+
+Visiting Prettier's [Plugin documentation](https://prettier.io/docs/Plugins) gives a lot of useful information on how to start, but is hard to follow if you aren't already familiar with Javascript. In short, a Plugin is a file that exports the following five things:
+
+```ts
+// Prettier types
+import type { Parser, Printer, SupportLanguage, SupportOption } from 'prettier'
+
+// describes the programming langue the Plugin can format, what file extensions it runs on, and what parser it uses
+export const languages: SupportLanguage[]
+
+// describes the Parser and Lexer, the entry function (`parse`) accepts a file (as a string) and expects an AST to be returned
+export const parsers: { [languageName: string]: Parser<MyNodeType> }
+
+// describes the Printer and how it should turn your AST nodes into Prettier's Doc intermediate representation
+export const printers: { [astFormat: string]: Printer<MyNodeType> }
+
+// describes the options the Plugin supports and their defaults
+export const options: { [optionName: string]: SupportOption }
+export const defaultOptions: { [optionName: string]: any }
+```
+
+The `languages`, `options`, and `defaultOptions` exports are the easiest to explain and are well-documented in the documentation. The hard parts are `parsers` and `printers`.
+
+This is also a good time to talk about how Prettier reads this stuff.
+
+# Prettier Machine
+
+## Main
+
+The main input for Prettier (when using it in code) looks something like this.
+
+```ts
+// Prettier types
+import prettier, { Config } from 'prettier'
+// import your awesome Plugin as a file
+import * as MyPlugin from 'path/to/file.js'
+
+const config: Config = {
+  // tell Prettier to always format using your Plugin's language
+  parser: 'myLanguageName',
+  // tell Prettier to use your Plugin
+  plugins: [MyPlugin],
+
+  // add any other options (either built-in like `tabWidth` or custom options for your Plugin)
+  // ...myOtherOptions,
+}
+
+// format your text using the provided config
+const formattedText = await prettier.format(rawText, config)
+```
+
+Let's work backwards.
+
+## Parser
+
+`parser: 'myLanguageName'` tells Prettier to use a `myLanguageName` parser, so we must define it. In your Plugin, the `parsers` export contains an entry for `myLanguageName`.
+
+```ts
+// Prettier types
+import type { Parser } from 'prettier'
+
+export const parsers: { [languageName: string]: Parser<MyNodeType> } = {
+  // this name must match the name provided as the `parser` option when calling `prettier.format`
+  myLanguageName: {
+    // MAIN ENTRY POINT
+    // accepts some text and Prettier options, and outputs your AST
+    parse(text: string, options): MyNodeType {
+      // ...
+    },
+
+    // tell Prettier what AST type your Parser outputs
+    astFormat: 'myAstFormat',
+
+    // these two accepts a node and output its offset (in characters) into the original string
+    locStart(node: MyNodeType): number {
+      // ...
+    },
+    locEnd(node: MyNodeType): number {
+      // ...
+    },
+  },
+}
+```
+
+The `parse` function is our main entry point and output an AST. We are free to use whatever AST format we want, but there are some subtleties that we'll discuss later. Since we BYOAST (bring your own AST (abstract syntax tree)), we also give Prettier a string `astFormat` for identifying our AST. This is used in the next part, the Printer.
+
+## Printer
+
+The Printer's job is to iterate through the AST and recursively convert each node into Prettier's intermediate representation, `Doc`. It also has a lot of options for controlling how it does the printing, so here's our simple overview.
+
+```ts
+// Prettier types
+import type { AstPath, Doc, Printer } from 'prettier'
+
+export const printer: Printer<MyNodeType> = {
+  // MAIN ENTRY
+  print(
+    // wraps your AST node with some helper functions
+    path: AstPath<MyNodeType>,
+    // Prettier options
+    options,
+    // a recursive print function
+    print: (path: AstPath<MyNodeType>) => Doc,
+  ): Doc {
+    // turn your node into a Doc
+    // ...
+  },
+}
+```
+
+The intermediate representation is described [here](https://github.com/prettier/prettier/blob/main/commands.md).
+
+Now that we have our overview, let's talk specifics.
+
+# The AST
+
+The Abstract Syntax Tree is the core of our formatter and is the main "unit" that we perform our operations on. The AST forms a tree-like syntax, with nodes connecting to children who connect to other children. There are a lot of ways to structure an AST, so here's a Catspeak program and my version of its AST.
+
+```sp
+-- comment
+let my_func = fun (args) { }
+```
+
+<FileTree
+  basePath="RootNode"
+  paths={[
+    'LetStatement/IdentifierNode',
+    'LetStatement/FunctionNode/IdentifierNode',
+    'LetStatement/FunctionNode/BlockNode/CommentPlaceholderNode',
+  ]}
+/>
+
+The types of these nodes are declared in code as a Typescript interface, with a `type` field for differentiating between them.
+
+```ts
+// a range used to describe when the node starts and ends in the original file, provided by our own code
+import type { Range } from './lexer.js'
+
+// base node
+interface BaseNode {
+  range: Range
+}
+
+interface BlockNode extends BaseNode {
+  type: 'Block'
+  children: AstNode[]
+}
+
+interface CommentPlaceholderNode extends BaseNode {
+  type: 'CommentPlaceholder'
+}
+
+interface RootNode extends BaseNode {
+  type: 'Root'
+  block: AstNode[]
+}
+
+interface LetStatement extends BaseNode {
+  type: 'LetStatement'
+  identifier: IdentifierNode
+  value: AstExpressionNode | null
+}
+
+export interface FunctionNode extends BaseNode {
+  type: 'Function'
+  arguments: IdentifierNode[]
+  block: BlockNode
+}
+```
+
+Each AST node represents some part of the function and can contain children, depending on the type. For example, the `LetStatement` node links the assignment identifier and value as its children (`let identifier = value`), while the `FunctionNode` links its arguments and block as nodes.
+
+There's also some tricky parts. Function (and `catch`, `do`, `if`, `case`, `while`, and `with`) expressions in my AST have a `BlockNode` as a child instead of an array of child nodes. There's also a suspicious `CommentPlaceholderNode`, a tool for later.
+
+# Printing
+
+Now that the AST has been built, we can get to the tricky part: the printer.
+
+As a recap, the goal of the printer is to accept an AST node and turn it into Prettier's Doc format. So let's get going.
+
+## Entry Point
+
+The first thing we do is determine what kind of node we're printing. The `path.node` argument provides the AST node defined in the Parser section, so we can use a field on the AST Node (`type` in my case) to differentiate what node it is,
+
+```ts
+export const printer: Printer<AstNode> = {
+  // ...
+  print(path, options, print, args) {
+    const fn = nodePrinters[path.node.type]
+    // ...
+    return fn(path, options, print, args)
+  },
+  // ...
+}
+```
+
+In my case, the `type` is used as an index into `nodePrinters`, which stores our printing functions. Below is the function for the `GroupNode`.
+
+```ts
+const nodePrinters = {
+  // ...
+  Group(path, options, print) {
+    return group([
+      '(',
+      indent([softline, path.call(print, 'inside')]),
+      softline,
+      ')',
+    ])
+  },
+  // ...
+}
+```
+
+There's a lot of unfamiliar variables and function calls, so lets break it down.
+
+## The Doc
+
+`Doc` is Prettier's intermediate representation and is defined as the following. `DocCommand` items are made using special function calls or constants.
+
+```ts
+type Doc = string | Doc[] | DocCommand
+```
+
+`DocCommand` items are made using special function calls or constants. These are under the `builders` import.
+
+```ts
+import { builders } from 'prettier/doc'
+// builder utilities
+const { group, indent, join, softline, hardline } = builders
+```
+
+The official Prettier [documentation](https://github.com/prettier/prettier/blob/main/commands.md) has more details on what the commands are.
+
+The base unit is the `group`. When a line of text gets too long, the outermost group "breaks". Broken groups have the `softline` keyword changed from an empty string to a newline and the `hardline` keyword changed from a space to a newline. So if you have something like:
+
+```ts
+group(['(', softline, foo, softline, ')'])
+```
+
+The the unbroken output would be:
+
+```sp
+(foo)
+```
+
+But the broken output (in case `foo` is a very long string) would be:
+
+```sp
+(
+foo
+)
+```
+
+## Indenting
+
+Of course, after a newline we usually want to indent the next line. Prettier provides the `indent` operation, which marks lines created inside it to indent.
+
+```ts
+group(['(', indent([softline, foo]), softline, ')'])
+```
+
+Note the position of the `indent`; it only indents text that was put on a newline inside the indent. If the indent is only around `foo` (or includes the second `softline`), then lines won't be indented correctly..
+
+```sp
+-- softline, indent(foo), softline
+(
+foo
+)
+
+-- indent([softline, foo, softline])
+(
+  foo
+  )
+```
+
+In short, most indented groups should start with either a `softline` or `hardline` and be followed by a `softline` or `hardline` outside the indent call.
+
+## Descending the Tree
+
+AST Nodes usually have children, and those children must also be printed. The first argument to the print function, `path: AstPath<>`, has a bunch of utility functions for printing a child's node. But the simplest one is `.call(...)`.
+
+The following is the print function for the `do { ... }` statement.
+
+```ts
+Do(path, options, print) {
+  return group(['do ', path.call(print, 'block')])
+}
+```
+
+`path.call` accepts a function to run on the child (`print`, which prints a node) and a key of the node (`block`). It then runs the main `print` function we defined early, but this time using the child node.
+
+My Hot Garbage Tip for child nodes is to keep the layout of those children very simple. My original draft of the nodes had arrays of structs, which don't play nice with the printer. Just keep it simple and have "dummy" child nodes that aren't actual language constructs.
+
+That's the basics! Now just repeat for every node type, find unexpected formatting issues, resolve regression issues fixing your unexpected formatting issues, and make a million stylistic judgement calls! Oh, and don't forget about comments!
+
+# Comments
+
+Ok one last thing, I promise. Prettier includes a (somewhat reasonable) comment printing algorithm. To use it, you need some setup.
+
+1. Add a `comments` (it must be called this exactly) field to your root node (returned by your parser). It should be an array of AST Nodes (similar to your regular AST Nodes) that are your comments.
+1. Ensure the `locStart` and `locEnd` functions for your parser are returning accurate values, including your Comment nodes.
+1. Add the `printComment` function to your printer, which accepts a Comment Node (provided by the `comments` array) and returns a Doc for that comment.
+1. Add the `canAttachComment` function to your printer which should return true if the passed node can have comments attached. Mine always returns true.
+1. (Optional) Add the `getCommentChildNodes` function to your printer to help the comment algorithm find your child nodes. If this isn't provided, the algorithm will search all fields on your Nodes for children (in my case, this includes the range information that Prettier thought was a Node).
+
+When all of this is set up, Prettier will iterate through all of your Comment Nodes and attach them to the nodes using the `locStart` and `locEnd` functions. Its relatively smart, and will preserve leading and trailing state. But there's a minor issue (at least with how I set mine up).
+
+## Empty Blocks
+
+If a comment is inside of an empty block, then the comment won't have a node to attach to and the printing will fail. To fix this, my parser inserts a special CommentPlaceholder node inside empty blocks. To get the comments to line up properly, the placeholder is placed at the very end of the block (where the last `}` is) and has length zero.
+
+A similar technique is used for significant whitespace, where placeholder Newline nodes are placed between "real" nodes to preserve the newlines.
+
+# The Rest of the Owl
+
+My recommendation is to start with a reference style guide and match it using a lot of test cases. Thankfully, Catspeak is similar enough to Javascript that I could use Prettier's own styling as a reference, but there were still a few edge cases that needed ironing out.
+
+And that's (mostly) everything! Pretty simple, right? (c:)
+
+# What did we learn
+
+While its fun to mess around with code for a few weeks, bits also valuable to reflect on what you've learned, beyond the literal code that was written.
+
+## Test-driven development (can be) very powerful
+
+My existing experience with testing has been mixed, but this project has highlighted its strengths. When you have a clear set of inputs and outputs (such as unformatted and formatted text), its really easy to crank out a bunch of test cases and use those as the basis for your code.
+
+```ts
+describe('assignment', () => {
+  it('simple', test('x=a', 'x = a'))
+  // ...
+})
+```
+
+In theory its amazing, any regression is instantly caught, you have a clear set of goals, and can locate every possible bug instantly, treating programming like a checklist you add test cases. Its perfection!
+
+In reality, it sucks in the usual way: there's still a human in the process. Its easy to write test cases that "look" correct, but are actually broken in some way or don't play out correctly in practice. Here's an example.
+
+```sp
+if some_long_condition and
+    some_other_condition {
+  return true
+}
+```
+
+The above is my preferred output, but all of my test cases were incorrect, so instead I got the below.
+
+```sp
+-- note line break after `if`
+if
+  some_long_condition and
+    some_other_condition {
+  return true
+}
+```
+
+You can also miss cases entirely. I initially didn't test for comments inside certain blocks, which caused some funny printing.
+
+```sp
+-- expected
+match a {
+  -- comment
+  case b { }
+}
+
+-- received
+match a {
+  case b --
+  { }
+}
+```
+
+Test cases alone aren't enough to write code, you also need to ensure those test cases actually match your expected behavior and that you're covering everything you actually want to test.
+
+## Javascript modules and packages and ...
+
+The process to go from "finished plugin and extension" to "a .vsix file I can share with the world" is a massive pain. We'll skip the history lesson, but keep in mind that **A)** Javascript is a hot mess, **B)** I'm not an expert, and **C)** most of this is from blind trial-and-error.
+
+But here's my secret sauce.
+
+### Plugin package
+
+The Prettier Plugin package is a `commonjs` export:
+
+```json
+{
+  "type": "commonjs",
+  "exports": {
+    ".": "./out/index.js",
+    "./package.json": "./package.json"
+  }
+}
+```
+
+The `tsconfig.json` file tells the plugin to compile into `/out`, so we need to tell the plugin extension to export our compiled `js` files instead of the Typescript files. Upsides: it actually works. Downsides: importing types from the Plugin into the extension doesn't work.
+
+### Extension package
+
+The extension package is an ES `module` bundled with ESBuild.
+
+```json
+{
+  "type": "module",
+  "main": "./dist/extension.js",
+  "dependencies": {
+    "@harlem512/prettier-plugin-catspeak": "file:..",
+    "prettier": "^3.8.3"
+  }
+}
+```
+
+The `file:..` tells NPM to use the parent directory as a module to import and works "fine". I don't know why the package needs to be a module. `main` also lines up with the bundler's output, not Typescript's compiled output. The last part is the `esbuild.cjs` file (it must be a `.cjs` Javascript file). The important context settings are below.
+
+```ts
+const ctx = await esbuild.context({
+  entryPoints: ['src/extension.ts'],
+  bundle: true,
+  format: 'esm',
+  platform: 'node',
+  outfile: 'dist/extension.js',
+  external: ['vscode'],
+})
+```
+
+The `format` must be `esm` and the rest is relatively straightforward. Good luck.
+
+## Microsoft Web Services
+
+So you've got your awesome VSCode extension and you want to publish it to the world. Just make an account and drop the `.vsix` file into a dropbox right?
+
+Wrong. You fool. Utter buffoon. A rookie mistake.
+
+Uploading a VSCode extension requires:
+
+1. Making a Microsoft account
+1. Registering an Azure organization
+1. Putting in a credit card number (!!!) so you can use the free (???) plan for an Azure service
+1. Create a publisher for your organization (don't forget the name, because you can't change it or look it up once you've created one)
+1. Update your `package.json` with the name of your publisher and a unique project name that no other project has used (hope you didn't choose the same name as someone else!)
+1. Upload your `.vsix` file directly to the public, no unlisted rollout or versioning (hope you got the name right the first time because you can't change it!)
+
+Overall, a terrible experience. Zero out of ten. Which makes this next part all the more interesting.
+
+## AI and its Consequences
+
+Its time to reveal my hand. I've wanted (and briefly tried to make) a Catspeak formatter for a long time, but never found the drive to make one good enough to actually use (since a janky formatter is worse than no formatter). That drive finally hit when I was installing a new VSCode instance and found [Klapro's Catspeak extension](https://github.com/klapro/catspeak-vscode-ext), my nemesis and the topic of this next section.
+
+### The Vibe Code
+
+To put it kindly, this extension doesn't work. And not in a "it doesn't format exactly how I prefer", but in a subtle "doesn't know how to parse arrays" way. Digging into the code to figure out why and fix it lead directly into the realization that (most of, to be generous) the code is AI generated. As an example, presented as it is in the source code:
+
+```ts
+function parseForStatement(): ForStatementNode {
+  // ...
+
+  // Expect 'in' keyword or some separator — Catspeak uses 'in' for iteration
+  // If there's no 'in', just parse the iterable
+  if (check('Identifier') && peekValue() === 'in') {
+    advance() // consume 'in'
+  }
+
+  // ...
+}
+```
+
+Catspeak doesn't have a `for` statement. It certainly doesn't have an `in` keyword for iteration. Even if this was a copy-paste job, no human would write a comment explaining a language feature that doesn't exist. _Especially_ when there's a list of Catspeak keywords in the repository that doesn't include `for` or `in`.
+
+There's other weirdness I'll skip; we've all written some truly heinous code. But not all of us leave the `.kiro` files for our vibe-coding "Agentic Workflow" in the github repository (a dead giveaway).
+
+### Who Cares?
+
+Before continuing, its important to lay some groundwork. "Artificial Intelligence" (AI) is a very messy topic and quickly descends into an inescapable political swamp. The popular anti-AI takes like ["AI steals human work"](https://www.theatlantic.com/technology/archive/2025/03/libgen-meta-openai/682093/), ["AI art isn't real art"](https://www.plymouth.ac.uk/discover/is-ai-generated-art-actually-art), and ["AI datacenters consume a lot of resources"](https://unu.edu/inweh/collection/environmental-cost-of-AIs-Enrgy-Use-Carbon-water-and-land-footprints) are persuasive because they're easy to prove intuitively and are relatively "non-political".
+
+The bigger reasons to be anti-AI (in my opinion) quickly expand into serious discussions about governments and capitalism that are extremely difficult to talk about because of boring reasons like "differences of opinion" and "priorities".
+
+Instead, we'll use this extension as a taste of why AI bad and stick to the surface-level stuff.
+
+### Deception
+
+When you look at the extension in the marketplace, it looks respectable. It has a nice Readme with proper grammar, an actual license, and it advertises some very features. It even uses Catspeak's icon, so it _must_ be legit.
+
+After you download it, you realize that it doesn't format correctly and is missing key language features and your time has been wasted.
+
+### The not-working Part
+
+AI evangelists love to use AI's alleged usefulness when defending it. "Sure, AI has a million downsides, but you can make a [thing] in seconds!" This is especially true in the software development space, but I'd like to counter with this extension.
+
+If AI were so good, why does it produce code for a `for` loop that the language doesn't support? Why doesn't it parse arrays? Why doesn't it know that Catspeak is an expression-oriented language and that `let x = if true { 1 } else { 0 }` is valid Catspeak? If AI is so good, why isn't there AII?
+
+### But why?
+
+To be fair, a vibe-coded VSCode extension that doesn't work is pretty low-stakes. The download count for the extension is in the low double-digits, which means almost nobody has actually been affected.
+
+But I just don't get why. Why would you make an AI slop extension and go through the effort to post it to the VSCode marketplace? There's no monetary gain and theres limited usefulness (since the extension doesn't work and Catspeak is unpopular).
+
+Thats not to say that people shouldn't make things that no one will use; my own extension has fewer downloads and will likely remain that way. Things made by humans have value because a Person made them, and there's beauty in the small decisions people make to solve problems only they worked on.
+
+But I'm also just some random internet person, so what do I know.
+
+# In Conclusion
+
+That was a lot of words. Hope it wasn't too bad. Thanks for scrolling all the way to the end, I know you didn't read it all.

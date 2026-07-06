@@ -1,0 +1,59 @@
+---
+import Metadata from '@/layouts/Metadata.astro'
+import { getCollection } from 'astro:content'
+
+const blogCollection = await getCollection('blog')
+
+const title = 'Blog'
+const description = 'Ramblings about things you can safely ignore.'
+---
+
+<Metadata title={title} description={description}>
+  <header>
+    <h1>{title}</h1>
+    <aside>{description}</aside>
+  </header>
+  <main>
+    <table>
+      <caption>Blog Posts</caption>
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Written</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          blogCollection
+            .sort((a, b) => b.data.written.getTime() - a.data.written.getTime())
+            .map((c) => (
+              <tr>
+                <td>
+                  <a href={`/blog/${c.id}`}>{c.data.title}</a>
+                </td>
+                <td>
+                  <p style={{ whiteSpace: 'nowrap' }}>
+                    {c.data.written.toLocaleDateString('en-US', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })}
+                  </p>
+                </td>
+                <td>{c.data.description}</td>
+              </tr>
+            ))
+        }
+      </tbody>
+    </table>
+  </main>
+  <footer>
+    <aside>
+      <a href="/blog">BLOG</a>
+    </aside>
+    <p>
+      A <a href="/">Harlem512 Production</a>
+    </p>
+  </footer>
+</Metadata>

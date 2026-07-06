@@ -6,8 +6,21 @@ const modDocs = defineCollection({
   schema: z.object({
     desc: z.string(),
     title: z.string(),
-    order: z.number()
+    order: z.number(),
   }),
 })
 
-export const collections = { modDocs }
+const blog = defineCollection({
+  loader: glob({ pattern: '*.mdx', base: './src/pages/blog' }),
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    written: z.coerce.date().transform((d) => {
+      // add 24 hours so dates line up
+      d.setHours(25)
+      return d
+    }),
+  }),
+})
+
+export const collections = { modDocs, blog }

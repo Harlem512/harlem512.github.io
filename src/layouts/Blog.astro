@@ -1,13 +1,45 @@
 ---
+import type { MarkdownLayoutProps } from 'astro'
 import Metadata from './Metadata.astro'
+import { getCollection } from 'astro:content'
 
-const { frontmatter } = Astro.props
+type Props = MarkdownLayoutProps<{
+  title: string
+  description: string
+  written: string
+}>
+
+const blogCollection = await getCollection('blog')
+const { frontmatter, url } = Astro.props
+
+if (!url) throw new Error('URL missing')
+
+const blog = blogCollection.find((b) => url.endsWith(b.id))
+if (!blog) throw new Error(`Blog not found ${url}`)
+
+const rawContent = blog.body
+if (!rawContent) throw new Error('Blog missing body')
 ---
 
 <Metadata title={frontmatter.title} description={frontmatter.description}>
   <header>
     <h1>{frontmatter.title}</h1>
-    <aside>{frontmatter.description}</aside>
+    <aside>
+      {frontmatter.description}
+      <br />
+      <i>
+        {
+          blog.data.written.toLocaleDateString('en-US', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          })
+        }
+        &mdash;
+        {Math.round(rawContent.length / 7 / 240)}
+        minute read
+      </i>
+    </aside>
   </header>
   <main>
     <article class="md">
@@ -15,9 +47,9 @@ const { frontmatter } = Astro.props
     </article>
   </main>
   <footer>
-    <aside>BLOG</aside>
+    <aside><a href="/blog">BLOG</a></aside>
     <p>
-      A <a href='/'>Harlem512 Production</a>
+      A <a href="/">Harlem512 Production</a>
     </p>
   </footer>
 </Metadata>

@@ -24,5 +24,17 @@
         "text": "Contribute"
       }
     ]
+  },
+  {
+    "title": "Blog",
+    "demo": "/blog",
+    "description": "Ramblings about things you can safely ignore.",
+    "links": []
+  },
+  {
+    "title": "Terrafirma Craft Anvil Simulator",
+    "demo": "/tfc-anvil",
+    "description": "Anvil simulator for the Terrafirma Craft mod.",
+    "links": []
   }
 ]
