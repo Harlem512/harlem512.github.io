@@ -1,0 +1,90 @@
+---
+layout: '@/layouts/Blog.astro'
+title: 'Post-Mortem for GM48 #49'
+description: 'Yappaholic makes their first (original) game within 48 hours'
+written: '2026-07-13'
+---
+
+# Hello
+
+Hello. I recently participated in [GM48](https://gm48.net), a Gamemaker game-jam, and made my first original (non-clone) game, [Silenced](https://github.com/Harlem512/silenced). Its a cryptic reverse-horror game where you play as a Thing and need to escape containment, but you can't see and must rely on touch and your hearing.
+
+I'd like to reflect on the experience, what did and did not work, and what lessons I've learned. But first we need to address the Controversy.
+
+# Sound-gate
+
+My jam version of Silenced doesn't have any sound. My excuses for this are as follows:
+
+1. I listen to music (usually the same song on repeat) when working so any ideas for sfx are drowned out by sick beats. (Silenced was brought to you by [Proleter's _The Misfit Song_](https://proleter-official.com/music))
+1. I have no experience making sound effects and did not prioritize it when planning (due to lack of experience).
+1. I ran out of time :c (but likely would've added additional levels instead of sfx or music).
+
+With that being said, the criticisms are 100% valid and made me reconsider the importance of sound for games (which we'll talk about later). My [post-jam version](https://github.com/Harlem512/silenced/releases/tag/v1.0) has simple sound effects from [JSFXR](https://sfxr.me/) which (in my opinion) does help the atmosphere and immersion.
+
+# Ok now some context
+
+Now that I've absolved myself of any wrongdoing, I can give some more background. I remembered the Jam late on Friday, decided it was too late to join, then spent four hours (while desperately trying to sleep) plotting game mechanics and became too invested to not make a game. Since I didn't plan around the jam, I "only" spent 20ish hours doing active development, which is feels low for a 48 hour jam.
+
+I also started with a mechanic first ("what if you couldn't see and 'saw' sound?") and bent it into a game later, which definitely affected the end product. Silenced is cryptic and vague because I stumbled into the "what if the player doesn't know they're killing people" (spoilers) by accident and thought it was a neat concept. Did it succeed? I don't know, but its a jam game and no-one thinks that deep about it.
+
+As for my experience, I'm a well-trained software engineer but not a game developer. While I've done [modding with Gamemaker](https://github.com/Harlem512/rm-mod-manager), I'd never made a game from scratch before and there's definitely things you can ignore when modding that you can't when making a game (sfx, art/concept, ui, camera, movement, etc).
+
+Now we can start the retrospective.
+
+# What Worked
+
+First, some quick things that I fully liked.
+
+- **_The noise system_**: The visual noise popups worked really well and were the core mechanic I wanted to build around. I'd love to do more with the concept in the future, either using text effects or colors.
+- **_The credits_**: I made the credits screen relatively early in development, which gave me the freedom to end level design whenever I wanted (which did end up mattering).
+- **_The movement and camera work_**: Rusted Moss gave me the camera lerping idea, so the camera "lags" behind where the player actually is internally adding some weight to the movement without changing the player's movement at all. For the camera, I had issues with sub-pixel positioning (because I'm not a game dev) but eventually got it to a happy state.
+
+# What Barely Worked
+
+Now for some things that barely worked, starting with my new nemesis.
+
+## The Blackout Effect
+
+One of the mechanics I wanted for the game was to hide areas from vision until the player "touches" them by getting close. This was implemented using a persistent Gamemaker surface the size of the room, which had a few consequences.
+
+For starters, the whole "surfaces are 'volatile'" thing meant I built the entire system around backing up the surface to a buffer each frame. No-one reported low framerate, so I assume this was fast enough when combined with my other tricks.
+
+First, each room in the game is limited to 512 by 512 pixels with 16x16 tiles for a 32x32 tile grid. This imposes restrictions on the level design (a surprise tool that will help us later), but shrinks the size of the surface. Second, its a red-channel-only surface (`surface_r8unorm`) which shrinks the surface size by one fourth and gives the vision effect its distinct red color. In total, the surface occupies 2mb which is a lot but could maybe be larger without causing huge memory bandwidth issues.
+
+A consequence of the room size is that room transitions need to move the revealed content to the new part of the screen. This is done in a very hacky way and a _lot_ of time was spent attempting (and mostly failing) to make the room transitions seamless.
+
+While I think the vision system worked really well, I don't think the surface was the best choice but I also don't know a better method aside from keeping the game to one large room or adding a fullscreen vision reset.
+
+## The Mechanics
+
+The only real mechanic in the game is block pushing, which is implemented using a "track" system. Blocks can only be pushed on a single axis, and only within a set bounds. The blocks themselves work fine enough (I did custom collision that mostly works), but there definitely could have been more mechanics there (buttons and locked doors or noise generators maybe).
+
+## Level Design
+
+As teased earlier, the level design is kinda bad. Because of how the surface is preserved, the level entry point has a large deadzone where no content can be placed, so each level is very small. I also ran out of ideas for levels (mostly due to lack of mechanics), the last two levels are a simple maze (boring) and a second water tunnel (repeated).
+
+## Cryptic Gameplay
+
+The game design is intentionally cryptic, which has upsides and downsides. The lack of direction helps the reveal at the end, but you also need to be engaged with the game in the first place (which should never be expected, and a lack of sound doesn't help). It also imposes design constraints, like how there isn't big text to tell you how to push blocks or what to _actually_ do in the game.
+
+Its possible to "accidentally" make it all the way to the end without killing anyone by ignoring all of the sounds. I'm not sure the best way to solve this, Joey (the guy in the second room behind a block) is the best-designed NPC for teaching the player how to interact with the NPCs, but I'm not sure how well it works.
+
+# Reflections on the Jam itself
+
+Before continuing, I'd like to preface by saying that I had a lot of fun with GM48 and would recommend participating in the future. While I have some negative opinions on the Jam, I don't think my opinion is worth much (as a newbie gamedev with one jam of experience who doesn't run jams) and should likely be ignored.
+
+- **_Jams, generally_**: I had a lot of fun with the Jam. I'm not 100% convinced they're the best way to learn game development, but its hard to beat a good prompt with a hard time limit. 48 hours is a good time frame, long enough to make something quality but short enough to keep the time restriction relevant.
+- **_Teams vs Solo_**: As an outsider, it seems like being part of a team is strictly better than going solo. Adding additional developers obviously isn't a linear time save, but a second developer to work on level design, playtesting, art, sound, or just bounce ideas off of seems like a good strategy.
+- **_The Theme_**: "Total Darkness" was a really fun theme for me since I don't have much art skill and could crutch on the text-based graphics. With that said, I don't think the theme is as strong as the others. A lot of the games were "normal game but you can only see X pixels around the player" which isn't bad, but not as open-ended as "Equivalent Exchange" or "Spellcasting". I didn't participate in voting and don't know if this was the best of a bunch of worse options, but I don't think this is the best theme.
+- **_Feedback_**: A core part of GM48 is giving feedback (its required to be eligible), but I'm mixed on it. On one hand, giving an "excuse" to play other peoples games is a good idea. On the other, its actually really hard to give insightful feedback that isn't "I liked X" or "I didn't like Y". As an example, every feedback I got mentioned sound but only 3 out of 8 (a small sample size) mentioned any ideas on what _kind_ of sound to have.
+- **_Voting_**: GM48 games are voted on by the players of the games which (in my opinion) can skew results. One person's 10/10 is different from another person's 10/10 and low-sample sizes can absolutely sway the end results. Silenced had 8 ratings (out of ~40 participants) and ended up as the most stable game to ever be submitted to GM48 (so far) at 9.13 out of 10. Is that because its actually the most stable game, or because the few people who voted had low standards for stability, or because 8 people is a stupidly low sample size? Discuss in the comments.
+
+But would I change anything? Probably not. Giving some users higher voting power (such as previous event winners) could help, but has its own downsides.
+
+# What I Learned
+
+- **_Optimization is irrelevant_**: Gamemaker is fast enough that you can do dumb things with the engine and still have enough performance for your game. I wasted a lot of time building around the optimizations I made to the blackout mechanic when I should have gone bigger and eat the performance cost.
+- **_Presentation is everything_**: Every game (in my opinion) needs: a title screen, a credits screen (if the game has some kind of ending), a cover art (can be a screenshot of the title screen), sound effects and/or music, fullscreen capability, and some kind of graphics trick (particles, dithering, 3d, etc) and/or high-quality sprite work. Most of these are easy to budget (time-wise) and add a lot to the finished project.
+- **_Plan before Developing_**: Going into a jam with thought-out mechanics and a mostly-finished concept helps a lot. Starting with a mental plan saved me a lot of time, since I could go down a mental checklist of features.
+
+Thanks for scrolling to the end, see you's all next time.

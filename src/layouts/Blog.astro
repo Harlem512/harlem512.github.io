@@ -30,26 +30,27 @@ if (!rawContent) throw new Error('Blog missing body')
       <i>
         {
           blog.data.written.toLocaleDateString('en-US', {
+            timeZone: 'UTC',
             day: 'numeric',
             month: 'short',
             year: 'numeric',
           })
         }
         &mdash;
-        {Math.round(rawContent.length / 7 / 240)}
+        {Math.round(rawContent.length / 6 / 240)}
         minute read
       </i>
     </aside>
   </header>
   <main>
-    <article class="md">
+    <article class='md'>
       <slot />
     </article>
   </main>
   <footer>
-    <aside><a href="/blog">BLOG</a></aside>
+    <aside><a href='/blog'>BLOG</a></aside>
     <p>
-      A <a href="/">Harlem512 Production</a>
+      A <a href='/'>Harlem512 Production</a>
     </p>
   </footer>
 </Metadata>

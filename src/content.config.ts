@@ -15,11 +15,13 @@ const blog = defineCollection({
   schema: z.object({
     title: z.string(),
     description: z.string(),
-    written: z.coerce.date().transform((d) => {
-      // add 24 hours so dates line up
-      d.setHours(25)
-      return d
-    }),
+    written: z
+      .string()
+      .regex(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)
+      .transform((d) => {
+        const [year, month, date] = d.split('-')
+        return new Date(Date.UTC(Number(year), Number(month), Number(date)))
+      }),
   }),
 })
 

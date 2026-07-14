@@ -35,6 +35,7 @@ const description = 'Ramblings about things you can safely ignore.'
                 <td>
                   <p style={{ whiteSpace: 'nowrap' }}>
                     {c.data.written.toLocaleDateString('en-US', {
+                      timeZone: 'UTC',
                       day: 'numeric',
                       month: 'short',
                       year: 'numeric',
@@ -50,10 +51,10 @@ const description = 'Ramblings about things you can safely ignore.'
   </main>
   <footer>
     <aside>
-      <a href="/blog">BLOG</a>
+      <a href='/blog'>BLOG</a>
     </aside>
     <p>
-      A <a href="/">Harlem512 Production</a>
+      A <a href='/'>Harlem512 Production</a>
     </p>
   </footer>
 </Metadata>
