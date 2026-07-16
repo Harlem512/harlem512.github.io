@@ -1,0 +1,79 @@
+---
+layout: '@/layouts/Blog.astro'
+title: 'Two Year Modding Retrospective'
+description: '730 days of modding yada yada yada'
+written: '2026-07-16'
+---
+
+# Hello
+
+Hello. At time of writing, we're two years since the release of Rusted Moss's [Catspeak modding support](https://store.steampowered.com/news/app/1772830/view/4380396738331447015) and I think it's time for an update. If you missed [last year's](/blog/one-year-retrospective), feel free to continue missing it since there's going to be new thoughts here this time.
+
+# Status Update
+
+I've been on a light modding hiatus since the last update, but there's still been some stuff released from the others.
+
+- The [Archipelago integration](https://github.com/dgrossmann144/Archipelago) has gotten better UI and a bunch of improvements, thanks to Tereneckla and Mr L.
+- April Fools 2026 was saved by Elire, Astra, and Vei and Tereneckla with some [troll](https://github.com/Harlem512/rm-mod-database#froy-elire-astra-vei) [mods](https://github.com/Harlem512/rm-mod-database#cracked-bone-whip-tereneckla).
+
+Thankfully, Rusted Moss itself hasn't had any big announcements we need to talk about.
+
+# Iron Bramble
+
+If you haven't seen it yet, the Rusted Moss team (and friends) are actively working on a [spiritual successor](https://store.steampowered.com/app/4328820/Iron_Bramble/), which will have modding support. I don't have insider information about the state of modding for Iron Bramble (IB (Eye Bee)), but we can still talk about the future of my mods and speculate on what's going to change.
+
+## IBML When?
+
+If IB keeps the same modding API as Rusted Moss, then there will be an Iron Bramble Mod Loader (IBML) in the same style as RMML, likely with a few tweaks (removing Jayspeak, legacy ini mod parsing, actual JSON mod metadata, proper SemVer version control, multiple gamestart scripts, better "submod" support, etc). I'm also hoping Iron Bramble will use the (hopefully finished) Catspeak 4, the new module system looks awesome and I'd love to use it for stuff.
+
+My dream is that IBML isn't needed because the devs expand the modding API to cover all of the things I needed RMML to support. This is probably unlikely, there probably won't be enough demand to justify the dev time, and the extra delay between mod feature requested and implementation in the game could cause issues.
+
+## IBMM ??
+
+Rusted Moss Mod Loader is the UI and supporting data source that lets you download and manage mods from inside the game itself. While it would be amazing, I doubt Iron Bramble will have an official mod manager, which leaves the task for the rest of us.
+
+Unlike IBML, which will require minimal changes to work with IB, Iron Bramble Mod Manager (IBMM) would be a complete rewrite. Not only is RMMM poorly-designed, but it also heavily depends on UI components from Rusted Moss. Its also a massive undertaking and will be heavily delayed, IBML (if needed) will likely release weeks or months before IBMM is ready.
+
+Depending on feedback, I might look into hosting mods on a more "professional" website (like ModDB), but I doubt the demand will be high enough to justify spending significant time integrating with the platform instead of using Github as a data source.
+
+In either case, all of this is subject to change. We have no idea what modding will look like in Iron Bramble and speculation will only get you so far. I plan on releasing a poll on the modding support (and RMML/RMMM/IBML/IBMM's role in it) as we get closer to Iron Bramble's release and get more information on modding support's details.
+
+## Pls Interactive Map
+
+I don't like committing to things, especially when the details are unknown, but I will **_probably_** be making an interactive map for Iron Bramble, when modding support releases. At time of writing, I'm working on some tooling to make the process much easier (and might finally get around to adding the winter DLC to Rusted Moss's interactive map).
+
+It mostly depends on how complex the graphics pipeline is and how easy it is to get full-size images of the rooms.
+
+## Modding Documentation
+
+Iron Bramble will probably have modding documentation like Rusted Moss, and I might even work on it more regularly. No promises. Hopefully some other devs help me out in writing it c:
+
+## The Rest of the Mods
+
+The rest of my mods we can rapid-fire go through.
+
+- **Lilac(?) Palette**: Unnecessary. According to the short-form content, Frocks (the cosmetic dresses) will already be moddable. Snowill's Palette (Frock?) Editor would be nice though.
+- **Ghost Multiplayer**: Maybe. Ghost MP depends on access to the Steam API functions, so its entirely dependent on if those are exposed again. And if its not a lot of work to do the player rendering.
+- **Checklist**: Likely. Checklist was a byproduct of the interactive map technology I was working on and will be repeated.
+- **Gimmick**: Maybe. The joke isn't as funny the second time, and Lilac's faster movement will probably be hard to replicate with extra jumps and/or dashes.
+- **Grapple Preview**, **Minimap**, **Speedrun Timer Control**: Possible. This is the kind of mod that would likely be in the base game, so it depends on if the devs add it or not.
+- **Minify!**: Maybe. Depends on how complex Lilac's rendering is and if moving faster on a character that already has the zoomies feels fun.
+- **More Saves**: Possible. Depends on if the devs lock the save count to 7ish like Rusted Moss or not.
+- **Preserve Window**: Doable. Not much to say.
+- **Puntable**: Doable. Depends on if there's a better API for objects/instances that should be grappleable, vs hijacking the enemy logic.
+- **Pursuit**: No. I'm probably not going to copy and paste Jeremy's code into Iron Bramble.
+- **Risk of Moss**: Unlikely. While Lilac definitely fits the genre better, it'd be a completely new project (with a lot of new problems to solve) with little re-usability from Risk of Moss. I call dibs on The Binding of Lilac though.
+
+Wait, what was that last one?
+
+# Risk of Moss
+
+Risk of Moss is a work-in-progress overhaul mod for Rusted Moss that converts it into a rogue-like game, inspired by The Binding of Isaac and Risk of Rain. You explore a procedurally-generated map (built from real Rusted Moss rooms) and kill randomly spawned enemies, loot chests, and buy items before fighting one of the Rusted Moss's bosses and progressing to the next stage.
+
+I've been working on it (on and off, I keep [getting](/blog/how-to-prettier) [distracted](/blog/gm48-49-silenced)) since January 2026 and am approximately 60% done. Level generation and enemy spawning mechanics are finalized, but item buying, enemy balancing, and some other boring stuff still need to be completed.
+
+# Conclusion
+
+Short update this time. Hopefully Risk of Moss and the winter DLC interactive map get finished. Go wishlist Iron Bramble, if we get enough wishlists we can force the devs to release the Froy plush (joking).
+
+See you all next year.
